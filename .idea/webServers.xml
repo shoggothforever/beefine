@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="0f8caf44-9c40-4e73-b13b-7bf991bc2fcb" name="vm_1">
+        <fileTransfer rootFolder="/home/ds/Desktop/ebpf/fb" accessType="SFTP" host="192.168.201.128" port="22" sshConfigId="b38c9104-fb8c-4a20-acc6-5f43eef63993" sshConfig="ds@192.168.201.128:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" isUseSudo="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
