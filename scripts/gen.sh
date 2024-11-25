@@ -15,7 +15,7 @@ import (
   "github.com/cilium/ebpf/rlimit"
 )
 // remove -type event if you won't use diy struct in kernel
-//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -target bpfel -type event bpf $PACKAGE_NAME.c -- -I../headers
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -target bpfel -type event bpf $PACKAGE_NAME.c -- -I /sys/kernel/btf
 type ${PACKAGE_NAME^}Req struct {
 
 }
@@ -51,7 +51,7 @@ func Start(req ${PACKAGE_NAME^}Req) (<-chan ${PACKAGE_NAME^}Res,func()) {
   return out,buildClose()
 
 }
-func Action(objs bpfObjects , req ${PACKAGE_NAME^}Req , stopper chan struct{}) <-chan ${PACKAGE_NAME^}Res{
+func Action(objs bpfObjects , req ${PACKAGE_NAME^}Req , stopper chan struct{}) chan ${PACKAGE_NAME^}Res{
   // add your link logic here
   out := make(chan ${PACKAGE_NAME^}Res)
   go func() {
@@ -80,14 +80,13 @@ gen_c_file(){
   cat > "$BPF_DIR/$C_FILE" <<EOF
   //go:build ignore
 
-  #include "../vmlinux.h"
-  #include "../headers/common.h"
-  #include "../headers/bpf_endian.h"
-  #include "../headers/bpf_tracing.h"
+#include "../vmlinux.h"
+#include <bpf/bpf_helpers.h>
+#include <bpf/bpf_core_read.h>
 
   char LICENSE[] SEC("license") = "Dual BSD/GPL";
   struct event {
-  	u8 comm[16];
+  	__u8 comm[16];
   	__u16 val;
   };
   struct event *unused __attribute__((unused));
@@ -141,15 +140,15 @@ fi
 
 # 检查文件是否存在
 if [ ! -f "$BPF_DIR/$C_FILE" ]; then
-   echo "File $BPF_DIR/$GO_FILE does not exist. Creating the file..."
-   gen_go_file  # 执行生成文件的逻辑
+   echo "File $BPF_DIR/$C_FILE does not exist. Creating the file..."
+   gen_c_file  # 执行生成文件的逻辑
 else
  # 文件已存在，询问是否覆盖
     read -p "File "$BPF_DIR/$C_FILE" already exists. Do you want to overwrite it? [y/N]: " choice
     case "$choice" in
         y|Y )
             echo "Overwriting file "$BPF_DIR/$C_FILE...""
-            gen_go_file
+            gen_c_file
             ;;
         * )
             ;;
