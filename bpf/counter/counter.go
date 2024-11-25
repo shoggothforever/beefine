@@ -75,7 +75,6 @@ func Action(objs bpfObjects, req CounterReq, stopper chan struct{}) chan Counter
 				if err != nil {
 					fmt.Println("Map lookup:", err)
 				}
-				log.Printf("Received %d packets", count)
 				out <- CounterRes{Count: count}
 			case <-stopper:
 				log.Print("Received signal, exiting..")

@@ -6,7 +6,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"net"
 	"shoggothforever/beefine/bpf/counter"
-	"shoggothforever/beefine/pkg/component"
 )
 
 const CounterUIName = "countNetPackage"
@@ -36,9 +35,9 @@ func CounterUI() fyne.CanvasObject {
 	stopButton := widget.NewButton("Stop", nil)
 	stopButton.Disable()
 	// 运行逻辑
-	// 动态更新柱状图的函数
-	// 柱状图容器
-	barChart := component.NewBarChart()
+	// 计数标签
+	cntLabel := widget.NewLabel("Counter")
+	cntLabel.SetText("waiting to count")
 
 	var cancelFunc func()
 	selectIface.OnChanged = func(s string) {
@@ -49,7 +48,7 @@ func CounterUI() fyne.CanvasObject {
 		stopButton.Enable()
 		go func() {
 			for v := range out {
-				barChart.AppendData(int(v.Count))
+				cntLabel.SetText(fmt.Sprintf("Received %d packets", v.Count))
 			}
 			statusLabel.SetText("Status: Idle")
 			stopButton.Disable()
@@ -60,7 +59,7 @@ func CounterUI() fyne.CanvasObject {
 			cancelFunc() // 调用关闭函数
 			statusLabel.SetText("Status: Stopped")
 			stopButton.Disable()
-			barChart.RemoveData()
+			cntLabel.SetText("waiting to count")
 		}
 	}
 	defer stop()
@@ -76,6 +75,6 @@ func CounterUI() fyne.CanvasObject {
 		statusLabel,
 		stopButton,
 		widget.NewLabel("Real-Time Packet Counter:"),
-		barChart,
+		cntLabel,
 	)
 }
