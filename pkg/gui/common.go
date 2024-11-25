@@ -82,3 +82,7 @@ func (t *TabManager) Get(title string) *container.TabItem {
 	}
 	return item
 }
+func NewUIVBox(title string, objs ...fyne.CanvasObject) *fyne.Container {
+	objs = append(objs, NewCloseButton(title))
+	return container.NewVBox(objs...)
+}

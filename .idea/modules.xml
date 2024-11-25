@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/fynebpf.iml" filepath="$PROJECT_DIR$/.idea/fynebpf.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/beefine.iml" filepath="$PROJECT_DIR$/.idea/beefine.iml" />
     </modules>
   </component>
 </project>

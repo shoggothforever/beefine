@@ -67,18 +67,3 @@ func extractHelpers(output string) map[string][]string {
 
 	return helperMap
 }
-
-// parseAttachPoints 解析 eBPF attach points 列表
-func parseAttachPoints(scanner *bufio.Scanner) []string {
-	var hooks []string
-
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
-			break // Attach points 列表结束
-		}
-		hooks = append(hooks, line)
-	}
-
-	return hooks
-}

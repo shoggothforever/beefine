@@ -2,7 +2,6 @@ package gui
 
 import (
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"shoggothforever/beefine/pkg/logic"
 )
@@ -42,10 +41,10 @@ func ProbesUI() fyne.CanvasObject {
 	}
 
 	// 布局
-	return container.NewVBox(
+	return NewUIVBox(
+		ProbesUIName,
 		widget.NewLabel("Select a ProgType and Hook:"),
 		progTypeSelect,
 		hookSelect,
-		NewCloseButton(ProbesUIName),
 	)
 }
