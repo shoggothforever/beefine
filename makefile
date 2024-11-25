@@ -13,7 +13,7 @@ all: build
 gen:
 	@echo "Running gen script from $(GEN_SCRIPT)..."
 	@chmod +x $(GEN_SCRIPT) # 确保脚本有执行权限
-	@$(GEN_SCRIPT) $(PKG)
+	@bash $(GEN_SCRIPT) $(PKG)
 
 .PHON: build run
 build:

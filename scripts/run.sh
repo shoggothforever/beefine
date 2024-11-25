@@ -12,4 +12,4 @@ BUILD_DIR=$1
 go generate ./$BUILD_DIR/ && go build . && sudo ./go-ebpf
 
 
-# sh run.sh exec
+# bash run.sh exec
