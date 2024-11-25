@@ -34,9 +34,20 @@ func Start(req ${PACKAGE_NAME^}Req) (<-chan ${PACKAGE_NAME^}Res,func()) {
   if err := loadBpfObjects(&objs, nil); err != nil {
     log.Fatalf("loading objects: %v", err)
   }
-  defer objs.Close()
-  // write your link code here
-  return Action(objs, req, stopper),func(){signal.Notify(stopper, os.Interrupt) }
+    // write your link code here
+
+  	buildClose := func() func() {
+  		once := sync.Once{}
+  		return func() {
+  			once.Do(func() {
+  				objs.Close()
+  				// close attach
+  				close(stopper)
+  			})
+  		}
+  	}
+
+  return Action(objs, req, stopper),buildClose()
 
 }
 func Action(objs bpfObjects , req ${PACKAGE_NAME^}Req , stopper chan os.Signal) <-chan ${PACKAGE_NAME^}Res{

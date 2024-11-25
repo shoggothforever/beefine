@@ -1,4 +1,4 @@
-package beefine
+package main
 
 import (
 	"fyne.io/fyne/v2/app"

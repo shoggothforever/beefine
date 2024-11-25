@@ -1,5 +1,5 @@
 # 定义变量
-OBJ := fynebpf
+OBJ := beefine
 
 SCRIPTS_DIR := scripts
 GEN_SCRIPT := $(SCRIPTS_DIR)/gen.sh

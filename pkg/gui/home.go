@@ -9,7 +9,10 @@ import (
 // HomeUI  creates the Home page with a list of available features.
 func HomeUI(w fyne.Window) fyne.CanvasObject {
 	// 按钮：List Probes
-	listProbesButton := NewUITabButton(ProbesUIName)
+	listProbesButton := NewUITabButton(ProbesUIName, ProbesUI)
+	// 按钮：counter Probes
+	CounterButton := NewUITabButton(CounterUIName, CounterUI)
+
 	// 其他功能按钮
 	placeholderButton := widget.NewButton("Placeholder Feature", func() {
 		widget.ShowPopUp(widget.NewLabel("Feature coming soon!"), w.Canvas())
@@ -19,6 +22,7 @@ func HomeUI(w fyne.Window) fyne.CanvasObject {
 	return container.NewVBox(
 		widget.NewLabel("Select a feature:"),
 		listProbesButton,
+		CounterButton,
 		placeholderButton,
 	)
 }

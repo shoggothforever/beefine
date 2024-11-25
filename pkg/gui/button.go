@@ -7,12 +7,14 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func NewUITabButton(title string) *widget.Button {
+type NewCanvasObjectFunc func() fyne.CanvasObject
+
+func NewUITabButton(title string, fn NewCanvasObjectFunc) *widget.Button {
 	return widget.NewButton(title, func() {
 		// 打开一个新选项卡显示 List Probes UI
 		tabItem := tabManager.Get(title)
 		if tabItem == nil {
-			tabItem = container.NewTabItem(title, ProbesUI())
+			tabItem = container.NewTabItem(title, fn())
 			tabManager.Append(tabItem, true)
 		} else {
 			tabManager.Select(tabItem)
