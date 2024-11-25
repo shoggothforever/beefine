@@ -19,7 +19,7 @@ func HomeUI(w fyne.Window) fyne.CanvasObject {
 	})
 
 	// 布局
-	return container.NewVBox(
+	return container.NewGridWithColumns(4,
 		widget.NewLabel("Select a feature:"),
 		listProbesButton,
 		CounterButton,

@@ -3,9 +3,12 @@ package gui
 import (
 	"fmt"
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"image/color"
 	"net"
 	"shoggothforever/beefine/bpf/counter"
+	"shoggothforever/beefine/pkg/component"
 )
 
 const CounterUIName = "countNetPackage"
@@ -38,6 +41,8 @@ func CounterUI() fyne.CanvasObject {
 	// 计数标签
 	cntLabel := widget.NewLabel("Counter")
 	cntLabel.SetText("waiting to count")
+	// 创建实时折线图
+	liveChart := component.NewLiveChart(50, color.RGBA{R: 255, G: 100, B: 100, A: 255})
 
 	var cancelFunc func()
 	selectIface.OnChanged = func(s string) {
@@ -49,15 +54,15 @@ func CounterUI() fyne.CanvasObject {
 		go func() {
 			for v := range out {
 				cntLabel.SetText(fmt.Sprintf("Received %d packets", v.Count))
+				liveChart.AppendData(float64(v.Count))
 			}
-			statusLabel.SetText("Status: Idle")
 			stopButton.Disable()
 		}()
 	}
 	stop := func() {
 		if cancelFunc != nil {
 			cancelFunc() // 调用关闭函数
-			statusLabel.SetText("Status: Stopped")
+			statusLabel.SetText("Status: Idle")
 			stopButton.Disable()
 			cntLabel.SetText("waiting to count")
 		}
@@ -73,8 +78,9 @@ func CounterUI() fyne.CanvasObject {
 		widget.NewLabel("click to check how many net package have been received"),
 		selectIface,
 		statusLabel,
-		stopButton,
+		container.NewHBox(stopButton),
 		widget.NewLabel("Real-Time Packet Counter:"),
 		cntLabel,
+		liveChart,
 	)
 }
