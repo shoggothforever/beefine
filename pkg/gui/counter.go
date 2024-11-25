@@ -3,12 +3,10 @@ package gui
 import (
 	"fmt"
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"image/color"
 	"net"
 	"shoggothforever/beefine/bpf/counter"
+	"shoggothforever/beefine/pkg/component"
 )
 
 const CounterUIName = "countNetPackage"
@@ -40,19 +38,7 @@ func CounterUI() fyne.CanvasObject {
 	// 运行逻辑
 	// 动态更新柱状图的函数
 	// 柱状图容器
-	chartContainer := container.NewVBox()
-	updateChart := func(data int) {
-		// 模拟柱状图高度变化
-		bar := canvas.NewRectangle(color.Black)
-		bar.SetMinSize(fyne.NewSize(10, float32(data)))
-		chartContainer.Add(bar)
-
-		// 保留最近 10 个柱状图
-		if len(chartContainer.Objects) > 10 {
-			chartContainer.Objects = chartContainer.Objects[1:]
-		}
-		canvas.Refresh(chartContainer)
-	}
+	barChart := component.NewBarChart()
 
 	var cancelFunc func()
 	selectIface.OnChanged = func(s string) {
@@ -63,30 +49,33 @@ func CounterUI() fyne.CanvasObject {
 		stopButton.Enable()
 		go func() {
 			for v := range out {
-				updateChart(int(v.Count))
+				barChart.AppendData(int(v.Count))
 			}
 			statusLabel.SetText("Status: Idle")
 			stopButton.Disable()
 		}()
 	}
-	// 停止按钮事件
-	stopButton.OnTapped = func() {
+	stop := func() {
 		if cancelFunc != nil {
 			cancelFunc() // 调用关闭函数
 			statusLabel.SetText("Status: Stopped")
 			stopButton.Disable()
+			barChart.RemoveData()
 		}
-		chartContainer.Objects = []fyne.CanvasObject{}
-		chartContainer.Refresh()
 	}
+	defer stop()
+	// 停止按钮事件
+	stopButton.OnTapped = stop
 	// 模拟动态数据（调试用）
 
 	return NewUIVBox(
 		CounterUIName,
+		stop,
 		widget.NewLabel("click to check how many net package have been received"),
 		selectIface,
 		statusLabel,
 		stopButton,
-		chartContainer,
+		widget.NewLabel("Real-Time Packet Counter:"),
+		barChart,
 	)
 }

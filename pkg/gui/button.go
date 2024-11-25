@@ -24,12 +24,15 @@ func NewUITabButton(title string, fn NewCanvasObjectFunc) *widget.Button {
 
 const CloseButtonTitle = "Close Tab"
 
-func NewCloseButton(title string) *widget.Button {
+func NewCloseButton(title string, cancel func()) *widget.Button {
 	// 关闭按钮
 	closeButton := widget.NewButtonWithIcon(CloseButtonTitle, theme.WindowCloseIcon(), func() {
 		// 从 Tabs 中移除当前 Tab
 		if item, ok := tabManager.TabItemsMap[title]; ok && item != nil {
 			tabManager.Remove(item)
+		}
+		if cancel != nil {
+			cancel()
 		}
 	})
 
@@ -40,7 +43,7 @@ func NewCloseButton(title string) *widget.Button {
 func NewClosableTab(title string, content fyne.CanvasObject) *container.TabItem {
 	// 创建标题容器，包含标题文字和关闭按钮
 	label := widget.NewLabel(title)
-	closeButton := NewCloseButton(title)
+	closeButton := NewCloseButton(title, nil)
 	// 使用 HBox 布局将标题和关闭按钮放在一起
 	tabTitle := container.NewHBox(label, content, closeButton)
 

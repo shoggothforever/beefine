@@ -43,6 +43,7 @@ func ProbesUI() fyne.CanvasObject {
 	// 布局
 	return NewUIVBox(
 		ProbesUIName,
+		nil,
 		widget.NewLabel("Select a ProgType and Hook:"),
 		progTypeSelect,
 		hookSelect,
