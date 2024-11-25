@@ -36,7 +36,7 @@ func Start(req ${PACKAGE_NAME^}Req) (<-chan ${PACKAGE_NAME^}Res,func()) {
   }
   defer objs.Close()
   // write your link code here
-  return Action(objs, req, stopper),func(){stopper<-os.Interrupt}
+  return Action(objs, req, stopper),func(){signal.Notify(stopper, os.Interrupt) }
 
 }
 func Action(objs bpfObjects , req ${PACKAGE_NAME^}Req , stopper chan os.Signal) <-chan ${PACKAGE_NAME^}Res{

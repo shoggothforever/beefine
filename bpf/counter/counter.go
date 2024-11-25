@@ -12,9 +12,14 @@ import (
 )
 
 // remove -type event if you won't use diy struct in kernel
+//
 //go:generate go run github.com/cilium/ebpf/cmd/bpf2go -target bpfel bpf counter.c -- -I /sys/kernel/btf
+type CounterReq struct {
+}
+type CounterRes struct {
+}
 
-func Start() {
+func Start(req CounterReq) (<-chan CounterRes, func()) {
 	stopper := make(chan os.Signal, 1)
 	signal.Notify(stopper, os.Interrupt, syscall.SIGTERM)
 	// Allow the current process to lock memory for eBPF resources.
@@ -31,12 +36,13 @@ func Start() {
 
 	// write your link code here
 
-	go Action(objs)
-	<-stopper
+	// write your link code here
+	return Action(objs, req, stopper), func() { signal.Notify(stopper, os.Interrupt) }
 }
 
-func Action(objs bpfObjects) {
+func Action(objs bpfObjects, req CounterReq, stopper chan os.Signal) <-chan CounterRes {
 	// add your link logic here
+	out := make(chan TestRes)
 	ifname := "ens33" // Change this to an interface on your machine.
 	iface, err := net.InterfaceByName(ifname)
 	if err != nil {
@@ -56,19 +62,21 @@ func Action(objs bpfObjects) {
 	log.Printf("Counting incoming packets on %s..", ifname)
 	tick := time.Tick(time.Second)
 	stop := make(chan os.Signal, 5)
-	signal.Notify(stop, os.Interrupt)
-	for {
-		select {
-		case <-tick:
-			var count uint64
-			err := objs.PktCount.Lookup(uint32(0), &count)
-			if err != nil {
-				log.Fatal("Map lookup:", err)
+
+	go func() {
+		for {
+			select {
+			case <-tick:
+				var count uint64
+				err := objs.PktCount.Lookup(uint32(0), &count)
+				if err != nil {
+					log.Fatal("Map lookup:", err)
+				}
+				log.Printf("Received %d packets", count)
+			case <-stop:
+				log.Print("Received signal, exiting..")
+				return
 			}
-			log.Printf("Received %d packets", count)
-		case <-stop:
-			log.Print("Received signal, exiting..")
-			return
 		}
 	}
 }
