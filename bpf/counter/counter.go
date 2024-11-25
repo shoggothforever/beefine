@@ -6,10 +6,7 @@ import (
 	"github.com/cilium/ebpf/rlimit"
 	"log"
 	"net"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 )
 
@@ -24,8 +21,7 @@ type CounterRes struct {
 }
 
 func Start(req CounterReq) (<-chan CounterRes, func()) {
-	stopper := make(chan os.Signal, 1)
-	signal.Notify(stopper, os.Interrupt, syscall.SIGTERM)
+	stopper := make(chan struct{})
 	// Allow the current process to lock memory for eBPF resources.
 	if err := rlimit.RemoveMemlock(); err != nil {
 		log.Print(err)
@@ -43,28 +39,30 @@ func Start(req CounterReq) (<-chan CounterRes, func()) {
 		log.Fatalf("Getting interface %s: %s", ifname, err)
 	}
 	// Attach count_packets to the network interface.
-	link, err := link.AttachXDP(link.XDPOptions{
+	attachXDP, err := link.AttachXDP(link.XDPOptions{
 		Program:   objs.CountPackets,
 		Interface: iface.Index,
 	})
 	if err != nil {
 		log.Fatal("Attaching XDP:", err)
 	}
+	out := Action(objs, req, stopper)
 	buildClose := func() func() {
 		once := sync.Once{}
 		return func() {
 			once.Do(func() {
 				objs.Close()
-				link.Close()
+				attachXDP.Close()
+				close(out)
 				close(stopper)
 			})
 		}
 	}
 	log.Printf("Counting incoming packets on %s..", ifname)
-	return Action(objs, req, stopper), buildClose()
+	return out, buildClose()
 }
 
-func Action(objs bpfObjects, req CounterReq, stopper chan os.Signal) <-chan CounterRes {
+func Action(objs bpfObjects, req CounterReq, stopper chan struct{}) chan CounterRes {
 	// add your link logic here
 	out := make(chan CounterRes)
 	tick := time.Tick(time.Second)

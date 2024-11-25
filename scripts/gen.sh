@@ -23,8 +23,7 @@ type ${PACKAGE_NAME^}Res struct {
 
 }
 func Start(req ${PACKAGE_NAME^}Req) (<-chan ${PACKAGE_NAME^}Res,func()) {
-  stopper := make(chan os.Signal, 1)
-  signal.Notify(stopper, os.Interrupt, syscall.SIGTERM)
+  stopper := make(chan struct{})
   // Allow the current process to lock memory for eBPF resources.
   if err := rlimit.RemoveMemlock(); err != nil {
     log.Fatal(err)
@@ -36,21 +35,23 @@ func Start(req ${PACKAGE_NAME^}Req) (<-chan ${PACKAGE_NAME^}Res,func()) {
   }
     // write your link code here
 
+	  out:=Action(objs, req, stopper)
   	buildClose := func() func() {
   		once := sync.Once{}
   		return func() {
   			once.Do(func() {
   				objs.Close()
   				// close attach
+  				close(out)
   				close(stopper)
   			})
   		}
   	}
 
-  return Action(objs, req, stopper),buildClose()
+  return out,buildClose()
 
 }
-func Action(objs bpfObjects , req ${PACKAGE_NAME^}Req , stopper chan os.Signal) <-chan ${PACKAGE_NAME^}Res{
+func Action(objs bpfObjects , req ${PACKAGE_NAME^}Req , stopper chan struct{}) <-chan ${PACKAGE_NAME^}Res{
   // add your link logic here
   out := make(chan ${PACKAGE_NAME^}Res)
   go func() {
