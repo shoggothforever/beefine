@@ -13,8 +13,12 @@ import (
 )
 
 type bpfEvent struct {
-	Comm [16]uint8
-	Val  uint16
+	Pid        int32
+	_          [4]byte
+	DurationNs uint64
+	Comm       [16]int8
+	ExitEvent  bool
+	_          [7]byte
 }
 
 // loadBpf returns the embedded CollectionSpec for bpf.
@@ -58,13 +62,16 @@ type bpfSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfProgramSpecs struct {
-	HandleXXX *ebpf.ProgramSpec `ebpf:"handle_XXX"`
+	HandleExec *ebpf.ProgramSpec `ebpf:"handle_exec"`
+	HandleExit *ebpf.ProgramSpec `ebpf:"handle_exit"`
 }
 
 // bpfMapSpecs contains maps before they are loaded into the kernel.
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
+	ExecStart *ebpf.MapSpec `ebpf:"exec_start"`
+	Rb        *ebpf.MapSpec `ebpf:"rb"`
 }
 
 // bpfObjects contains all objects after they have been loaded into the kernel.
@@ -86,22 +93,29 @@ func (o *bpfObjects) Close() error {
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
+	ExecStart *ebpf.Map `ebpf:"exec_start"`
+	Rb        *ebpf.Map `ebpf:"rb"`
 }
 
 func (m *bpfMaps) Close() error {
-	return _BpfClose()
+	return _BpfClose(
+		m.ExecStart,
+		m.Rb,
+	)
 }
 
 // bpfPrograms contains all programs after they have been loaded into the kernel.
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfPrograms struct {
-	HandleXXX *ebpf.Program `ebpf:"handle_XXX"`
+	HandleExec *ebpf.Program `ebpf:"handle_exec"`
+	HandleExit *ebpf.Program `ebpf:"handle_exit"`
 }
 
 func (p *bpfPrograms) Close() error {
 	return _BpfClose(
-		p.HandleXXX,
+		p.HandleExec,
+		p.HandleExit,
 	)
 }
 

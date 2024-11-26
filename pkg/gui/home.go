@@ -12,7 +12,8 @@ func HomeUI(w fyne.Window) fyne.CanvasObject {
 	listProbesButton := NewUITabButton(ProbesUIName, ProbesUI)
 	// 按钮：counter Probes
 	CounterButton := NewUITabButton(CounterUIName, CounterUI)
-
+	// 按钮：tracePoint Exec
+	ExecButton := NewUITabButton(ExecUIName, ExecUI)
 	// 其他功能按钮
 	placeholderButton := widget.NewButton("Placeholder Feature", func() {
 		widget.ShowPopUp(widget.NewLabel("Feature coming soon!"), w.Canvas())
@@ -23,6 +24,7 @@ func HomeUI(w fyne.Window) fyne.CanvasObject {
 		widget.NewLabel("Select a feature:"),
 		listProbesButton,
 		CounterButton,
+		ExecButton,
 		placeholderButton,
 	)
 }

@@ -20,7 +20,7 @@ type CounterRes struct {
 	Count uint64
 }
 
-func Start(req CounterReq) (<-chan CounterRes, func()) {
+func Start(req *CounterReq) (<-chan CounterRes, func()) {
 	stopper := make(chan struct{})
 	// Allow the current process to lock memory for eBPF resources.
 	if err := rlimit.RemoveMemlock(); err != nil {
@@ -62,7 +62,7 @@ func Start(req CounterReq) (<-chan CounterRes, func()) {
 	return out, buildClose()
 }
 
-func Action(objs bpfObjects, req CounterReq, stopper chan struct{}) chan CounterRes {
+func Action(objs bpfObjects, req *CounterReq, stopper chan struct{}) chan CounterRes {
 	// add your link logic here
 	out := make(chan CounterRes)
 	tick := time.Tick(time.Second)

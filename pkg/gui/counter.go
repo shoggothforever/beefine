@@ -35,8 +35,7 @@ func CounterUI() fyne.CanvasObject {
 	selectIface.PlaceHolder = "Select a network interface"
 
 	// 停止按钮（初始状态不可用）
-	stopButton := widget.NewButton("Stop", nil)
-	stopButton.Disable()
+	stopButton := NewStopButton()
 	// 运行逻辑
 	// 计数标签
 	cntLabel := widget.NewLabel("Counter")
@@ -45,8 +44,16 @@ func CounterUI() fyne.CanvasObject {
 	liveChart := component.NewLiveChart(50, color.RGBA{R: 255, G: 100, B: 100, A: 255})
 
 	var cancelFunc func()
+	var lastSelect string
 	selectIface.OnChanged = func(s string) {
-		req := counter.CounterReq{IfName: s}
+		if s == lastSelect {
+			return
+		}
+		if cancelFunc != nil {
+			cancelFunc()
+		}
+		lastSelect = s
+		req := &counter.CounterReq{IfName: s}
 		out, cancel := counter.Start(req)
 		cancelFunc = cancel
 		statusLabel.SetText(fmt.Sprintf("Status: Monitoring %s", s))
@@ -67,7 +74,6 @@ func CounterUI() fyne.CanvasObject {
 			cntLabel.SetText("waiting to count")
 		}
 	}
-	defer stop()
 	// 停止按钮事件
 	stopButton.OnTapped = stop
 	// 模拟动态数据（调试用）

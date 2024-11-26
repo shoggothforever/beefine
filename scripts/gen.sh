@@ -22,7 +22,7 @@ type ${PACKAGE_NAME^}Req struct {
 type ${PACKAGE_NAME^}Res struct {
 
 }
-func Start(req ${PACKAGE_NAME^}Req) (<-chan ${PACKAGE_NAME^}Res,func()) {
+func Start(req *${PACKAGE_NAME^}Req) ( chan ${PACKAGE_NAME^}Res,func()) {
   stopper := make(chan struct{})
   // Allow the current process to lock memory for eBPF resources.
   if err := rlimit.RemoveMemlock(); err != nil {

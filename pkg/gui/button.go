@@ -45,6 +45,15 @@ func NewCloseButton(title string, cancel func()) fyne.CanvasObject {
 	return content
 }
 
+const StopButtonName = "Stop"
+
+func NewStopButton() *widget.Button {
+	// 停止按钮（初始状态不可用）
+	stopButton := widget.NewButton(StopButtonName, nil)
+	stopButton.Disable()
+	return stopButton
+}
+
 // NewClosableTab creates a new TabItem with a close button on the Tab title.
 func NewClosableTab(title string, content fyne.CanvasObject) *container.TabItem {
 	// 创建标题容器，包含标题文字和关闭按钮
