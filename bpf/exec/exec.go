@@ -12,7 +12,7 @@ import (
 )
 
 // remove -type event if you won't use diy struct in kernel
-//
+
 //go:generate go run github.com/cilium/ebpf/cmd/bpf2go -type event -target bpfel  bpf exec.c -- -I  /sys/kernel/btf
 type ExecReq struct {
 	rb *ringbuf.Reader

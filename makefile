@@ -1,6 +1,7 @@
 # 定义变量
 OBJ := beefine
-
+ASSETS_DIR := internal/data/assets
+LOGO_FILE := logo.png
 SCRIPTS_DIR := scripts
 GEN_SCRIPT := $(SCRIPTS_DIR)/gen.sh
 PKG ?= default_arg
@@ -27,6 +28,23 @@ build:
 run: build
 	@sudo ./$(OBJ)
 
+.PHON: pkg_linux
+pkg_linux:
+	@go env -w GOOS=linux
+	@go env -w GOARCH=amd64
+	@fyne package -os linux -icon $(ASSETS_DIR)/$(LOGO_FILE)
+
+.PHON: pkg_windows
+pkg_windows:
+	@go env -w GOOS=windows
+	@go env -w GOARCH=amd64
+	@fyne package -os windows -icon $(ASSETS_DIR)/$(LOGO_FILE)
+
+.PHON: pkg_macos
+pkg_macos:
+	@go env -w GOOS=darwin
+	@go env -w GOARCH=amd64
+	@fyne package -os darwin -icon $(ASSETS_DIR)/$(LOGO_FILE)
 # 帮助信息
 .PHONY: help
 help:

@@ -8,8 +8,10 @@
 *.so
 *.dylib
 *.o
+*.idea
+*.tar.xz
 vmlinux.h
-
+fyne
 # Test binary, built with `go test -c`
 *.test
 
