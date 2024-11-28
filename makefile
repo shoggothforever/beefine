@@ -1,10 +1,10 @@
 # 定义变量
 OBJ := beefine
-ASSETS_DIR := internal/data/assets
-LOGO_FILE := logo.png
+LOGO_FILE := internal/data/assets/logo.png
 SCRIPTS_DIR := scripts
 GEN_SCRIPT := $(SCRIPTS_DIR)/gen.sh
 PKG ?= default_arg
+PKG_OS := linux
 # 默认目标
 .PHONY: all
 all: build
@@ -28,23 +28,28 @@ build:
 run: build
 	@sudo ./$(OBJ)
 
-.PHON: pkg_linux
-pkg_linux:
+.PHON: package linux windows macos
+package:
+	@go env -w CGO_ENABLED=1
+	@fyne package -os $(PKG_OS) -icon $(LOGO_FILE)
+
+.PHON: linux
+linux:
 	@go env -w GOOS=linux
 	@go env -w GOARCH=amd64
-	@fyne package -os linux -icon $(ASSETS_DIR)/$(LOGO_FILE)
+	@PKG_OS=linux
 
-.PHON: pkg_windows
-pkg_windows:
+.PHON: windows
+windows:
 	@go env -w GOOS=windows
 	@go env -w GOARCH=amd64
-	@fyne package -os windows -icon $(ASSETS_DIR)/$(LOGO_FILE)
+	@PKG_OS=windows
 
-.PHON: pkg_macos
-pkg_macos:
+.PHON: macos
+macos:
 	@go env -w GOOS=darwin
 	@go env -w GOARCH=amd64
-	@fyne package -os darwin -icon $(ASSETS_DIR)/$(LOGO_FILE)
+	@PKG_OS=darwin
 # 帮助信息
 .PHONY: help
 help:
