@@ -1,4 +1,4 @@
-package gui
+package component
 
 import (
 	"fmt"
@@ -7,8 +7,6 @@ import (
 	"sync"
 )
 
-var once sync.Once
-
 type TabManager struct {
 	TabItemsMap map[string]*container.TabItem
 	Tabs        *container.AppTabs
@@ -16,19 +14,23 @@ type TabManager struct {
 	m           sync.Mutex
 }
 
-var tabManager *TabManager
+var tabManagerMap = make(map[string]*TabManager)
 
-func NewTabManager(w *fyne.Window) *TabManager {
-	once.Do(func() {
-		tabManager = &TabManager{
+func NewTabManager(pkg string, w *fyne.Window) *TabManager {
+	if _, ok := tabManagerMap[pkg]; !ok {
+		tabManagerMap[pkg] = &TabManager{
 			TabItemsMap: make(map[string]*container.TabItem),
 			Tabs:        container.NewAppTabs(),
 			w:           w,
 			m:           sync.Mutex{},
 		}
-	})
-	return tabManager
+	}
+	return tabManagerMap[pkg]
 }
+func GetTabManager(pkg string) *TabManager {
+	return tabManagerMap[pkg]
+}
+
 func (t *TabManager) Remove(item *container.TabItem) {
 	t.m.Lock()
 	defer t.m.Unlock()
@@ -82,7 +84,7 @@ func (t *TabManager) Get(title string) *container.TabItem {
 	}
 	return item
 }
-func NewUIVBox(title string, cancel func(), objs ...fyne.CanvasObject) *fyne.Container {
-	objs = append([]fyne.CanvasObject{NewCloseButton(title, cancel)}, objs...)
+func NewUIVBox(pkg string, title string, cancel func(), objs ...fyne.CanvasObject) *fyne.Container {
+	objs = append([]fyne.CanvasObject{NewCloseButton(pkg, title, cancel)}, objs...)
 	return container.NewVBox(objs...)
 }

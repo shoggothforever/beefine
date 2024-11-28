@@ -1,9 +1,10 @@
-package gui
+package bpf
 
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
-	"shoggothforever/beefine/pkg/logic"
+	"shoggothforever/beefine/pkg/component"
+	"shoggothforever/beefine/pkg/gui/watcher/bpf/logic"
 )
 
 const ProbesUIName = "ListProbes"
@@ -41,7 +42,8 @@ func ProbesUI() fyne.CanvasObject {
 	}
 
 	// 布局
-	return NewUIVBox(
+	return component.NewUIVBox(
+		PKGName,
 		ProbesUIName,
 		nil,
 		widget.NewLabel("Select a ProgType and Hook:"),

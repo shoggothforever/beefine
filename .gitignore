@@ -12,6 +12,8 @@
 *.tar.xz
 vmlinux.h
 fyne
+
+config
 tmp
 # Test binary, built with `go test -c`
 *.test

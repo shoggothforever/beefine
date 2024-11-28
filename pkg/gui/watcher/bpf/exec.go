@@ -1,10 +1,11 @@
-package gui
+package bpf
 
 import (
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
 	"shoggothforever/beefine/bpf/exec"
+	"shoggothforever/beefine/pkg/component"
 )
 
 const ExecUIName = "trace syscall/exec"
@@ -18,7 +19,7 @@ func ExecUI() fyne.CanvasObject {
 	req := &exec.ExecReq{}
 	out, cancel := exec.Start(req)
 	cancelFunc = cancel
-	stopButton := NewStopButton()
+	stopButton := component.NewStopButton()
 	stopButton.Enable()
 	stopButton.OnTapped = func() {
 		if cancelFunc != nil {
@@ -31,7 +32,8 @@ func ExecUI() fyne.CanvasObject {
 			fmt.Println(v.Pid)
 		}
 	}()
-	return NewUIVBox(
+	return component.NewUIVBox(
+		PKGName,
 		ExecUIName,
 		stopButton.OnTapped,
 		stopButton,

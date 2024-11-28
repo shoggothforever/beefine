@@ -1,4 +1,4 @@
-package gui
+package bpf
 
 import (
 	"fmt"
@@ -35,7 +35,7 @@ func CounterUI() fyne.CanvasObject {
 	selectIface.PlaceHolder = "Select a network interface"
 
 	// 停止按钮（初始状态不可用）
-	stopButton := NewStopButton()
+	stopButton := component.NewStopButton()
 	// 运行逻辑
 	// 计数标签
 	cntLabel := widget.NewLabel("Counter")
@@ -78,7 +78,8 @@ func CounterUI() fyne.CanvasObject {
 	stopButton.OnTapped = stop
 	// 模拟动态数据（调试用）
 
-	return NewUIVBox(
+	return component.NewUIVBox(
+		PKGName,
 		CounterUIName,
 		stop,
 		widget.NewLabel("click to check how many net package have been received"),
