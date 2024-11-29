@@ -36,9 +36,9 @@ func Screen(_ fyne.Window) fyne.CanvasObject {
 		widget.NewLabel("-"),
 		widget.NewHyperlink("documentation", parseURL("")),
 		widget.NewLabel("-"),
-		widget.NewHyperlink("github", parseURL("")),
+		widget.NewHyperlink("github", parseURL("https://github.com/shoggothforever/beefine")),
 		widget.NewLabel("-"),
-		widget.NewHyperlink("gitlab", parseURL("")),
+		widget.NewHyperlink("gitlab", parseURL("https://gitlab.eduxiji.net/T202410336994295/project2608128-273615")),
 		layout.NewSpacer(),
 	)
 	author := fyne.StaticResource{}
