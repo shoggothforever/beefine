@@ -22,13 +22,13 @@ func ListProbes() map[string][]string {
 	helperMap := extractHelpers(string(output))
 
 	// 打印结果
-	fmt.Println("eBPF Helpers by Program Type:")
-	for progType, helpers := range helperMap {
-		fmt.Printf("%s:\n", progType)
-		for _, helper := range helpers {
-			fmt.Printf("  - %s\n", helper)
-		}
-	}
+	//fmt.Println("eBPF Helpers by Program Type:")
+	//for progType, helpers := range helperMap {
+	//	fmt.Printf("%s:\n", progType)
+	//	for _, helper := range helpers {
+	//		fmt.Printf("  - %s\n", helper)
+	//	}
+	//}
 	return helperMap
 }
 

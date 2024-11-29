@@ -3,7 +3,6 @@ package welcome
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/cmd/fyne_demo/data"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
@@ -23,7 +22,7 @@ func parseURL(urlStr string) *url.URL {
 }
 
 func Screen(_ fyne.Window) fyne.CanvasObject {
-	logo := canvas.NewImageFromResource(data.FyneLogoTransparent)
+	logo := canvas.NewImageFromFile("internal/data/assets/logo.png")
 	logo.FillMode = canvas.ImageFillContain
 	if fyne.CurrentDevice().IsMobile() {
 		logo.SetMinSize(fyne.NewSize(192, 192))
@@ -33,29 +32,31 @@ func Screen(_ fyne.Window) fyne.CanvasObject {
 
 	footer := container.NewHBox(
 		layout.NewSpacer(),
-		widget.NewHyperlink("fyne.io", parseURL("https://fyne.io/")),
+		widget.NewHyperlink("beefine.io", parseURL("")),
 		widget.NewLabel("-"),
-		widget.NewHyperlink("documentation", parseURL("https://docs.fyne.io/")),
+		widget.NewHyperlink("documentation", parseURL("")),
 		widget.NewLabel("-"),
-		widget.NewHyperlink("sponsor", parseURL("https://fyne.io/sponsor/")),
+		widget.NewHyperlink("github", parseURL("")),
+		widget.NewLabel("-"),
+		widget.NewHyperlink("gitlab", parseURL("")),
 		layout.NewSpacer(),
 	)
-
-	authors := widget.NewRichTextFromMarkdown(formatAuthors(string(data.Authors.Content())))
+	author := fyne.StaticResource{}
+	author.StaticName = "author"
+	author.StaticContent = []byte("蔡龙祥 <1337231450@qq.com>\n谭文轩 <2@qq.com>\n李睿涵 <3@qq.com>\n\n")
+	authors := widget.NewRichTextFromMarkdown(formatAuthors(string(author.Content())))
 	content := container.NewVBox(
-		widget.NewLabelWithStyle("\n\nWelcome to the Fyne toolkit demo app", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		widget.NewLabelWithStyle("\n\nWelcome to the beefine app", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		logo,
 		container.NewCenter(authors),
-		widget.NewLabelWithStyle("\nWith great thanks to our many kind sponsors\n", fyne.TextAlignCenter, fyne.TextStyle{Italic: true}))
+	)
 	scroll := container.NewScroll(content)
 
 	bgColor := withAlpha(theme.Color(theme.ColorNameBackground), 0xe0)
 	shadowColor := withAlpha(theme.Color(theme.ColorNameBackground), 0x33)
 
-	underlay := canvas.NewImageFromResource(data.FyneLogo)
 	bg := canvas.NewRectangle(bgColor)
-	underlayer := underLayout{}
-	slideBG := container.New(underlayer, underlay)
+
 	footerBG := canvas.NewRectangle(shadowColor)
 
 	listen := make(chan fyne.Settings)
@@ -72,15 +73,7 @@ func Screen(_ fyne.Window) fyne.CanvasObject {
 		}
 	}()
 
-	underlay.Resize(fyne.NewSize(1024, 1024))
-	scroll.OnScrolled = func(p fyne.Position) {
-		underlayer.offset = -p.Y / 3
-		underlayer.Layout(slideBG.Objects, slideBG.Size())
-	}
-
-	bgClip := container.NewScroll(slideBG)
-	bgClip.Direction = container.ScrollNone
-	return container.NewStack(container.New(unpad{top: true}, bgClip, bg),
+	return container.NewStack(container.New(unpad{top: true}, bg),
 		container.NewBorder(nil,
 			container.NewStack(footerBG, footer), nil, nil,
 			container.New(unpad{top: true, bottom: true}, scroll)))

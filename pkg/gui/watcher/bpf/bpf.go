@@ -5,7 +5,6 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"shoggothforever/beefine/pkg/component"
-	themes2 "shoggothforever/beefine/pkg/gui/themes"
 )
 
 const PKGName = "bpf"
@@ -18,7 +17,13 @@ var TabUIButtonFuncMap = map[string]func() fyne.CanvasObject{
 
 // Screen
 func Screen(w fyne.Window) fyne.CanvasObject {
-	a := fyne.CurrentApp()
+	// 创建选项卡容器
+	tabM := component.NewTabManager(PKGName, &w)
+	if homeItem := tabM.Get("home"); homeItem != nil {
+		// 布局
+		tabM.Select(homeItem)
+		return tabM.Tabs
+	}
 	objects := []fyne.CanvasObject{widget.NewLabel("Select a feature:")}
 	for name, fn := range TabUIButtonFuncMap {
 		objects = append(objects, component.NewUITabButton(PKGName, name, fn))
@@ -28,12 +33,12 @@ func Screen(w fyne.Window) fyne.CanvasObject {
 		widget.ShowPopUp(widget.NewLabel("Feature coming soon!"), w.Canvas())
 	})
 	objects = append(objects, placeholderButton)
-
-	themes := themes2.CreateThemes(a)
-	objects = append(objects, themes)
-
-	// 布局
-	return container.NewGridWithColumns(4,
+	home := container.NewGridWithColumns(4,
 		objects...,
 	)
+	homeItem := container.NewTabItem("home", home)
+	tabM.Append(homeItem, true)
+	// 布局
+	tabM.Select(homeItem)
+	return tabM.Tabs
 }
