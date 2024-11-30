@@ -7,6 +7,9 @@ import (
 	"fyne.io/fyne/v2/widget"
 	themes2 "shoggothforever/beefine/pkg/gui/themes"
 	"shoggothforever/beefine/pkg/gui/watcher/bpf"
+	"shoggothforever/beefine/pkg/gui/watcher/docker"
+	container2 "shoggothforever/beefine/pkg/gui/watcher/docker/container"
+	"shoggothforever/beefine/pkg/gui/watcher/docker/imager"
 	"shoggothforever/beefine/pkg/gui/watcher/welcome"
 )
 
@@ -17,35 +20,22 @@ type Watcher struct {
 }
 
 var Watchers = map[string]Watcher{
-	"welcome": {"welcome", "", welcome.Screen},
-	"bpf":     {"bpf", "", bpf.Screen},
+	"welcome":          {"welcome", "Welcome to the beefine observer", welcome.Screen},
+	"BPF":              {"BPF", "Observe system-level activities", bpf.Screen},
+	"Docker":           {"Docker", "Monitor Docker activities", docker.Screen},
+	"docker/imager":    {"Image Monitoring", "Monitor Docker imager creation process", imager.Screen},
+	"docker/container": {"Container Monitoring", "Monitor running container performance", container2.Screen},
 }
 
 var WatcherIndex = map[string][]string{
-	"": {"welcome", "bpf", "docker"},
+	"":       {"welcome", "BPF", "Docker"},
+	"Docker": {"docker/imager", "docker/container"},
 }
 
-func CreateWatcher() fyne.CanvasObject {
+func CreateTree(setWatcher func(t Watcher)) *widget.Tree {
 	a := fyne.CurrentApp()
-	content := container.NewStack()
-	title := widget.NewLabel("Component name")
-	intro := widget.NewLabel("An introduction would probably go\nhere, as well as a")
-	intro.Wrapping = fyne.TextWrapWord
-	w := a.NewWindow("beefine")
-	setWatcher := func(t Watcher) {
-		title.SetText(t.Title)
-		intro.SetText(t.Intro)
-		title.Hide()
-		intro.Hide()
-		content.Objects = []fyne.CanvasObject{t.View(w)}
-		content.Refresh()
-	}
-	setWatcher(Watchers["welcome"])
-	watcherBoarder := container.NewBorder(
-		container.NewVBox(title, widget.NewSeparator(), intro), nil, nil, nil, content)
-
 	var preferenceCurrentWatcher = "currentWatcher"
-	t := &widget.Tree{
+	return &widget.Tree{
 		BaseWidget:     widget.BaseWidget{},
 		Root:           "",
 		HideSeparators: false,
@@ -76,6 +66,29 @@ func CreateWatcher() fyne.CanvasObject {
 			node.(*widget.Label).SetText(watcher.Title)
 		},
 	}
+}
+func CreateWatcher() fyne.CanvasObject {
+	a := fyne.CurrentApp()
+	content := container.NewStack()
+	title := widget.NewLabel("Component name")
+	intro := widget.NewLabel("An introduction would probably go\nhere, as well as a")
+	intro.Wrapping = fyne.TextWrapWord
+	w := a.NewWindow("beefine")
+	setWatcher := func(t Watcher) {
+		title.SetText(t.Title)
+		intro.SetText(t.Intro)
+		title.Hide()
+		intro.Hide()
+		if t.View != nil {
+			content.Objects = []fyne.CanvasObject{t.View(w)}
+		}
+		content.Refresh()
+	}
+	setWatcher(Watchers["welcome"])
+	watcherBoarder := container.NewBorder(
+		container.NewVBox(title, widget.NewSeparator(), intro), nil, nil, nil, content)
+
+	t := CreateTree(setWatcher)
 	treeBoarder := container.NewBorder(nil, themes2.CreateThemes(a), nil, nil, t)
 
 	split := container.NewHSplit(treeBoarder, watcherBoarder)

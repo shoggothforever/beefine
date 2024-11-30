@@ -9,7 +9,7 @@ import (
 
 const PKGName = "bpf"
 
-var TabUIButtonFuncMap = map[string]func() fyne.CanvasObject{
+var tabUIButtonFuncMap = map[string]func() fyne.CanvasObject{
 	ProbesUIName:  ProbesUI,
 	CounterUIName: CounterUI,
 	ExecUIName:    ExecUI,
@@ -25,7 +25,7 @@ func Screen(w fyne.Window) fyne.CanvasObject {
 		return tabM.Tabs
 	}
 	objects := []fyne.CanvasObject{widget.NewLabel("Select a feature:")}
-	for name, fn := range TabUIButtonFuncMap {
+	for name, fn := range tabUIButtonFuncMap {
 		objects = append(objects, component.NewUITabButton(PKGName, name, fn))
 	}
 	// 其他功能按钮
