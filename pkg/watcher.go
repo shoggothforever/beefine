@@ -4,7 +4,9 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"shoggothforever/beefine/internal/data/assets"
 	themes2 "shoggothforever/beefine/pkg/gui/themes"
 	"shoggothforever/beefine/pkg/gui/watcher/bpf"
 	"shoggothforever/beefine/pkg/gui/watcher/docker"
@@ -69,6 +71,7 @@ func CreateTree(setWatcher func(t Watcher)) *widget.Tree {
 }
 func CreateWatcher() fyne.CanvasObject {
 	a := fyne.CurrentApp()
+	a.Settings().SetTheme(&themes2.ForcedVariant{Theme: theme.DefaultTheme(), Variant: theme.VariantLight})
 	content := container.NewStack()
 	title := widget.NewLabel("Component name")
 	intro := widget.NewLabel("An introduction would probably go\nhere, as well as a")
@@ -98,6 +101,7 @@ func CreateWatcher() fyne.CanvasObject {
 
 func WatcherStart() {
 	a := app.NewWithID("io.watcher.beefine")
+	a.SetIcon(fyne.NewStaticResource("icon", assets.LogoIcon))
 	w := a.NewWindow("beefine")
 	// 初始化窗口内容
 	w.SetContent(CreateWatcher())

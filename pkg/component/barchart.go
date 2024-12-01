@@ -13,55 +13,94 @@ import (
 type BarChart struct {
 	widget.BaseWidget
 	data   []int
+	labels []string
 	maxVal int
 	mu     sync.Mutex
 }
 
 func NewBarChart() *BarChart {
 	b := &BarChart{
-		data:   make([]int, 0),
-		maxVal: 1, // 防止除以零
+		data:   []int{0, 0, 0, 0}, // 默认4层镜像层
+		labels: []string{"Layer 1", "Layer 2", "Layer 3", "Layer 4"},
+		maxVal: 100, // 最大值
 	}
 	b.ExtendBaseWidget(b)
 	return b
 }
 
-func (b *BarChart) AppendData(value int) {
+func (b *BarChart) AppendData(layer int, value int) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	b.data = append(b.data, value)
-	if len(b.data) > 10 { // 限制为最近10个柱
-		b.data = b.data[1:]
+	if layer >= 0 && layer < len(b.data) {
+		b.data[layer] += value
+		if b.data[layer] > b.maxVal {
+			b.maxVal = b.data[layer]
+		}
+		b.Refresh()
 	}
-	if value > b.maxVal {
-		b.maxVal = value
-	}
-	b.Refresh()
 }
-func (b *BarChart) RemoveData() {
-	b.mu.Lock()
-	defer b.mu.Unlock()
 
-	b.data = make([]int, 0)
-	b.Refresh()
-}
+//func (bc *BarChart) CreateRenderer() fyne.WidgetRenderer {
+//	bc.mu.Lock()
+//	defer bc.mu.Unlock()
+//
+//	rects := make([]fyne.CanvasObject, len(b.data))
+//	for i, v := range b.data {
+//		// 动态高度比例
+//		height := float32(v) / float32(b.maxVal) * 200
+//		rect := canvas.NewRectangle(color.RGBA{R: uint8(50 + i*20), G: 100, B: 200, A: 255})
+//		rect.SetMinSize(fyne.NewSize(40, height))
+//		rects[i] = rect
+//	}
+//
+//	// 使用 HBox 布局
+//	container := container.NewHBox(rects...)
+//	return widget.NewSimpleRenderer(container)
+//}
+
+// CreateRenderer 实现 Fyne 的渲染逻辑
 func (b *BarChart) CreateRenderer() fyne.WidgetRenderer {
+	return &BarChartRenderer{b}
+}
+
+type BarChartRenderer struct {
+	*BarChart
+}
+
+func (b BarChartRenderer) Destroy() {
+
+}
+
+func (b BarChartRenderer) Layout(size fyne.Size) {
+
+}
+
+func (b BarChartRenderer) MinSize() fyne.Size {
+	return fyne.NewSize(20, 0)
+}
+
+func (b BarChartRenderer) Objects() []fyne.CanvasObject {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	rects := make([]fyne.CanvasObject, len(b.data))
-	for i, v := range b.data {
-		// 动态高度比例
-		height := float32(v) / float32(b.maxVal) * 200
-		rect := canvas.NewRectangle(color.RGBA{R: uint8(50 + i*20), G: 100, B: 200, A: 255})
+	bars := make([]fyne.CanvasObject, len(b.data))
+	for i, val := range b.data {
+		height := float32(val) / float32(b.maxVal) * 200
+		rect := canvas.NewRectangle(color.RGBA{R: uint8(50 + i*50), G: 150, B: 200, A: 255})
 		rect.SetMinSize(fyne.NewSize(40, height))
-		rects[i] = rect
+		label := canvas.NewText(b.labels[i], color.Black)
+		label.Alignment = fyne.TextAlignCenter
+
+		bars[i] = container.NewVBox(rect, label)
 	}
 
-	// 使用 HBox 布局
-	container := container.NewHBox(rects...)
-	return widget.NewSimpleRenderer(container)
+	barContainer := container.NewHBox(bars...)
+	return []fyne.CanvasObject{barContainer}
+}
+
+func (b BarChartRenderer) Refresh() {
+	canvas.Refresh(b)
 }
 
 // LiveChart 定义一个实时折线图组件
@@ -93,6 +132,11 @@ func (lc *LiveChart) AppendData(value float64) {
 	lc.Refresh()
 }
 
+// CreateRenderer 实现 Fyne 的渲染逻辑
+func (lc *LiveChart) CreateRenderer() fyne.WidgetRenderer {
+	return &LiveChartRenderer{l: lc}
+}
+
 type LiveChartRenderer struct {
 	l *LiveChart
 }
@@ -113,9 +157,4 @@ func (l LiveChartRenderer) Objects() []fyne.CanvasObject {
 
 func (l LiveChartRenderer) Refresh() {
 	canvas.Refresh(l.l)
-}
-
-// CreateRenderer 实现 Fyne 的渲染逻辑
-func (lc *LiveChart) CreateRenderer() fyne.WidgetRenderer {
-	return &LiveChartRenderer{l: lc}
 }
