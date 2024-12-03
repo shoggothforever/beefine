@@ -147,3 +147,23 @@ func PullDockerImage(imageName string) (string, error) {
 	// 返回成功信息
 	return outBuffer.String(), nil
 }
+
+// ListImage 获取系统中的镜像
+func ListImage() ([]string, error) {
+	// 创建上下文
+	ctx := context.Background()
+	cli, err := GetDockerClient()
+	if err != nil {
+		return nil, err
+	}
+	images, err := cli.ImageList(ctx, image.ListOptions{})
+	var imagestags []string
+	for _, v := range images {
+		fmt.Printf("%+v\n", v)
+		for _, tag := range v.RepoTags {
+			imagestags = append(imagestags, tag)
+			break
+		}
+	}
+	return imagestags, nil
+}

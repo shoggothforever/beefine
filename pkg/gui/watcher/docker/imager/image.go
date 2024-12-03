@@ -61,11 +61,14 @@ func Screen(w fyne.Window) fyne.CanvasObject {
 	})
 	imagePuller.SetPlaceHolder("Enter image name to pull")
 	imagePuller.OnSubmitted = pullImageFunc
-
-	ImageSelector := widget.NewSelect([]string{}, func(s string) {
+	tags, err := cli.ListImage()
+	if err != nil {
+		return nil
+	}
+	ImageSelector := NewMyCustomWidget(tags, func(s string) {
 		fmt.Printf("select existed image %s\n", s)
 	})
-
+	ImageSelector.base.PlaceHolder = "select existed image"
 	//var bpfChoices
 	toolbar := container.NewVBox(
 		imagePuller,
