@@ -184,7 +184,7 @@
 
 ### 下载二进制文件
 
-从项目的 [Release 页面](https://github.com/your-repo/beefine/releases) 下载对应版本的二进制文件。
+从项目的 [Release 页面](https://github.com/shoggothforever/beefine/releases) 下载对应版本的二进制文件。
 
 以 Ubuntu 20.04 为例：
 

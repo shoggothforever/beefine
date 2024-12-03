@@ -7,6 +7,7 @@ package $PACKAGE_NAME
 
 import (
   "log"
+  "sync"
   "os"
   "os/signal"
   "syscall"
@@ -51,7 +52,7 @@ func Start(req *${PACKAGE_NAME^}Req) ( chan ${PACKAGE_NAME^}Res,func()) {
   return out,buildClose()
 
 }
-func Action(objs bpfObjects , req ${PACKAGE_NAME^}Req , stopper chan struct{}) chan ${PACKAGE_NAME^}Res{
+func Action(objs bpfObjects , req *${PACKAGE_NAME^}Req , stopper chan struct{}) chan ${PACKAGE_NAME^}Res{
   // add your link logic here
   out := make(chan ${PACKAGE_NAME^}Res)
   go func() {
