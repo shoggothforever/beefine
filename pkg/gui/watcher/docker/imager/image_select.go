@@ -70,11 +70,18 @@ func NewToolBar(ImageLogs *widget.TextGrid, bpfLogs *widget.TextGrid) *fyne.Cont
 	})
 	imagePuller.SetPlaceHolder("Enter image name to pull")
 	imagePuller.OnSubmitted = pullImageFunc
-	tags, err := cli.ListImage()
+	images, err := cli.ListImage()
 	if err != nil {
 		return nil
 	}
-	imageSelector := NewImageSelect(tags, func(s string) {
+	var imagetags []string
+	for _, v := range images {
+		for _, tag := range v.RepoTags {
+			imagetags = append(imagetags, tag)
+			break
+		}
+	}
+	imageSelector := NewImageSelect(imagetags, func(s string) {
 		fmt.Printf("select existed image %s\n", s)
 	})
 	imageSelector.base.PlaceHolder = "select existed image"

@@ -172,18 +172,11 @@ func PullDockerImage(imageName string) (string, error) {
 }
 
 // ListImage 获取系统中的镜像
-func ListImage() ([]string, error) {
+func ListImage() ([]image.Summary, error) {
 	images, err := cliInstance.ImageList(ctx, image.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-	var imagetags []string
-	for _, v := range images {
-		//fmt.Printf("%+v\n", v)
-		for _, tag := range v.RepoTags {
-			imagetags = append(imagetags, tag)
-			break
-		}
-	}
-	return imagetags, nil
+	return images, nil
+
 }

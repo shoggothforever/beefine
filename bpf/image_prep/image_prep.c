@@ -33,14 +33,12 @@ int trace_openat(struct trace_event_raw_sys_enter *ctx) {
     __u32 pid = bpf_get_current_pid_tgid() >> 32;
     e = bpf_ringbuf_reserve(&es, sizeof(*e), 0);
     if (!e) return 0;
-
     bpf_get_current_comm(&e->comm, sizeof(e->comm));
     bpf_probe_read_str(&e->filename, sizeof(e->filename), filename);
     bpf_probe_read_str(&e->operation, sizeof(e->operation), "openat");
     e->pid = pid;
     e->bytes = 0; // 初始为 0
     bpf_ringbuf_submit(e, 0);
-
     return 0;
 }
 

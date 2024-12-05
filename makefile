@@ -19,7 +19,7 @@ gen:
 .PHON: build run
 build:
 	@echo "Running main project ..."
-	@go generate ./bpf/...
+	@BPF2GO_FLAGS="-O2 -g -Wall -Werror -fbuiltin$(CFLAGS)" go generate  ./bpf/...
 	@go build -x -v
 	@chmod +x $(OBJ)
 	@echo "build $(OBJ) successfully ..."

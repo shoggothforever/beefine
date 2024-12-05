@@ -12,7 +12,7 @@ import (
 
 // remove -type event if you won't use diy struct in kernel
 //
-//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -target bpfel -type event bpf image_prep.c -- -I /sys/kernel/btf
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -cc clang -cflags "-O2 -target bpf -fbuiltin " -target bpfel -type event bpf image_prep.c -- -I /sys/kernel/btf
 type ImagePrepReq struct {
 	rb *ringbuf.Reader
 }
