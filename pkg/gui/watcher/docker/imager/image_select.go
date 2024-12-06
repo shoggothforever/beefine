@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	imaget "github.com/docker/docker/api/types/image"
 	"os"
 	"reflect"
 	"shoggothforever/beefine/bpf/image_prep"
@@ -21,27 +22,40 @@ import (
 type ImageSelect struct {
 	widget.BaseWidget                // 嵌入 BaseWidget
 	base              *widget.Select // 内嵌 Select
-	currentImage      string         // 额外的字段
-	watcherID         int            //观测的docker 容器id
 	imageLogs         *widget.TextGrid
 	bpfLogs           *widget.TextGrid
 	cancelMap         map[string]func()
+	images            []imaget.Summary
+	currentImageIndex int
+	watcherID         int //观测的docker 容器id
 	m                 sync.Mutex
 }
 
 // NewImageSelect 创建自定义控件实例
-func NewImageSelect(options []string, onSelected func(string)) *ImageSelect {
+func NewImageSelect() *ImageSelect {
 	// 初始化 Select
-	selectWidget := widget.NewSelect(options, onSelected)
-
+	images, err := cli.ListImage()
+	if err != nil {
+		return nil
+	}
+	var imagetags []string
+	for _, v := range images {
+		for _, tag := range v.RepoTags {
+			imagetags = append(imagetags, tag)
+			break
+		}
+	}
+	selectWidget := widget.NewSelect(imagetags, nil)
 	// 创建 MyCustomWidget 实例
 	s := &ImageSelect{
-		base:         selectWidget,
-		currentImage: "default data", // 设置默认值
-		cancelMap:    make(map[string]func()),
-		m:            sync.Mutex{},
+		base:              selectWidget,
+		cancelMap:         make(map[string]func()),
+		m:                 sync.Mutex{},
+		images:            images,
+		currentImageIndex: 0,
 	}
-
+	s.base.OnChanged = s.OnChanged
+	s.base.PlaceHolder = "select existed image"
 	s.ExtendBaseWidget(s) // 必须扩展 BaseWidget
 	return s
 }
@@ -65,30 +79,17 @@ func NewToolBar(ImageLogs *widget.TextGrid, bpfLogs *widget.TextGrid) *fyne.Cont
 		}
 		ImageLogs.SetText(pullInfo)
 	}
-	imagePullerButton := widget.NewButton("Pull                  		", func() {
+	imagePullerButton := widget.NewButton("Pull                  				", func() {
 		pullImageFunc(imagePuller.Text)
 	})
 	imagePuller.SetPlaceHolder("Enter image name to pull")
 	imagePuller.OnSubmitted = pullImageFunc
-	images, err := cli.ListImage()
-	if err != nil {
-		return nil
-	}
-	var imagetags []string
-	for _, v := range images {
-		for _, tag := range v.RepoTags {
-			imagetags = append(imagetags, tag)
-			break
-		}
-	}
-	imageSelector := NewImageSelect(imagetags, func(s string) {
-		fmt.Printf("select existed image %s\n", s)
-	})
-	imageSelector.base.PlaceHolder = "select existed image"
+
+	imageSelector := NewImageSelect()
 	imageSelector.imageLogs = ImageLogs
 	imageSelector.bpfLogs = bpfLogs
 	jsonEditor := widget.NewMultiLineEntry()
-	jsonEditor.SetMinRowsVisible(10)
+	jsonEditor.SetMinRowsVisible(8)
 	jsonEditor.SetPlaceHolder(`{
     "image": "nginx",
     "name": "my-container",
@@ -117,7 +118,7 @@ func NewToolBar(ImageLogs *widget.TextGrid, bpfLogs *widget.TextGrid) *fyne.Cont
 	v := reflect.TypeOf(imageSelector)
 	for i := 0; i < v.NumMethod(); i++ {
 		m := v.Method(i)
-		fmt.Println(m.Name)
+		//fmt.Println(m.Name)
 		if strings.HasPrefix(m.Name, "choose") {
 			imageSelector.cancelMap[m.Name] = nil
 		}
@@ -137,6 +138,7 @@ func NewToolBar(ImageLogs *widget.TextGrid, bpfLogs *widget.TextGrid) *fyne.Cont
 		runButton,
 	)
 }
+
 func (w *ImageSelect) chooseUnionFS(b bool) {
 	if b == true {
 		req := image_prep.ImagePrepReq{}
@@ -162,21 +164,27 @@ func (w *ImageSelect) chooseUnionFS(b bool) {
 	}
 	fmt.Println("choose watch unionfs")
 }
+
 func (w *ImageSelect) chooseVolume(b bool) {
 
 }
+
 func (w *ImageSelect) chooseCgroup(b bool) {
 
 }
+
 func (w *ImageSelect) chooseNamespace(b bool) {
 
 }
+
 func (w *ImageSelect) chooseProcess(b bool) {
 
 }
+
 func (w *ImageSelect) chooseCpu(b bool) {
 
 }
+
 func (w *ImageSelect) AppendLogInLock(logs *widget.TextGrid, text string) {
 	file, err := os.OpenFile("tmplog.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -196,6 +204,17 @@ func (w *ImageSelect) AppendLogInLock(logs *widget.TextGrid, text string) {
 	}
 	//logs.SetText(text)
 }
+
+func (w *ImageSelect) OnChanged(s string) {
+	for k, v := range w.images {
+		if len(v.RepoTags) > 0 && v.RepoTags[0] == s {
+			w.currentImageIndex = k
+			fmt.Println("select image ", w.images[k])
+			break
+		}
+	}
+}
+
 func String2Bytes(s string) []byte {
 	sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
 	bh := reflect.SliceHeader{

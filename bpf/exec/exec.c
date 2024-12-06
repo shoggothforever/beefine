@@ -26,6 +26,7 @@ struct {
 
 struct event {
 	int pid;
+	int prio;
 	__u64 duration_ns;
 	char comm[TASK_COMM_LEN];
 	bool exit_event;
@@ -70,14 +71,12 @@ SEC("tracepoint/sched/sched_process_exit")
 int handle_exit(struct trace_event_raw_sched_process_template *ctx)
 {
 	struct event *e;
-	int pid, tid;
+	int pid, tid,prio;
 	__u64 id, ts, *start_ts, duration_ns = 0;
-
 	/* get PID and TID of exiting thread/process */
 	id = bpf_get_current_pid_tgid();
 	pid = id >> 32;
 	tid = (__u32)id;
-
 	/* ignore thread exits */
 	if (pid != tid)
 		return 0;
@@ -99,7 +98,7 @@ int handle_exit(struct trace_event_raw_sched_process_template *ctx)
 	else if (min_duration_ns)
 		return 0;
 	bpf_map_delete_elem(&exec_start, &pid);
-
+    e->prio=ctx->prio;
 	e->exit_event = true;
 	e->duration_ns = bpf_ktime_get_ns();
 	e->pid = pid;

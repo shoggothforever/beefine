@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"io"
@@ -179,4 +181,20 @@ func ListImage() ([]image.Summary, error) {
 	}
 	return images, nil
 
+}
+
+// ListContainer 获取系统中的镜像
+func ListContainer() ([]types.Container, error) {
+	containers, err := cliInstance.ContainerList(ctx, container.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return containers, nil
+
+}
+
+// Stats 获取容器实时的性能数据
+func Stats(id string) (container.StatsResponseReader, error) {
+	stat, err := cliInstance.ContainerStats(ctx, id, false)
+	return stat, err
 }

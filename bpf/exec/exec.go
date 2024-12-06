@@ -19,7 +19,7 @@ type ExecReq struct {
 }
 type ExecRes struct {
 	Pid        int32
-	_          [4]byte
+	Prio       int32
 	DurationNs uint64
 	Comm       [16]byte
 	ExitEvent  bool
@@ -90,7 +90,7 @@ func Action(objs bpfObjects, req *ExecReq, stopper chan struct{}) chan ExecRes {
 					log.Printf("reading record: %s", err)
 				}
 				if e.ExitEvent {
-					log.Printf("exit ts: %v, pid: %d, comm: %s\n", e.DurationNs, e.Pid, e.Comm)
+					log.Printf("exit ts: %v,prio:%d, pid: %d, comm: %s\n", e.DurationNs, e.Prio, e.Pid, e.Comm)
 				} else {
 					log.Printf("exec ts: %v, pid: %d, comm: %s\n", e.DurationNs, e.Pid, e.Comm)
 				}

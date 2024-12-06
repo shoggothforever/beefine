@@ -1,0 +1,2 @@
+#!/usr/bin/bpftrace
+bpftrace -e 'tracepoint:syscalls:sys_enter_mount { printf("pid:%d mount called: %s\n", pid,str(args->dir_name)) }'
