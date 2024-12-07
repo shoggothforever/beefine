@@ -22,16 +22,16 @@ type Watcher struct {
 }
 
 var Watchers = map[string]Watcher{
-	"welcome":          {"welcome", "Welcome to the beefine observer", welcome.Screen},
-	"BPF":              {"BPF", "Observe system-level activities", bpf.Screen},
-	"Docker":           {"Docker", "Monitor Docker activities", docker.Screen},
-	"docker/imager":    {"Image Monitoring", "Monitor Docker imager creation process", imager.Screen},
-	"docker/container": {"Container Monitoring", "Monitor running container performance", container2.Screen},
+	"welcome":   {"welcome", "Welcome to the beefine observer", welcome.Screen},
+	"BPF":       {"BPF", "Observe system-level activities", bpf.Screen},
+	"Docker":    {"Docker", "Monitor Docker activities", docker.Screen},
+	"imager":    {"Image Monitoring", "Monitor Docker imager creation process", imager.Screen},
+	"container": {"Container Monitoring", "Monitor running container performance", container2.Screen},
 }
 
 var WatcherIndex = map[string][]string{
 	"":       {"welcome", "BPF", "Docker"},
-	"Docker": {"docker/imager", "docker/container"},
+	"Docker": {"imager", "container"},
 }
 
 func CreateTree(setWatcher func(t Watcher)) *widget.Tree {
@@ -87,7 +87,9 @@ func CreateWatcher() fyne.CanvasObject {
 		}
 		content.Refresh()
 	}
-	setWatcher(Watchers["welcome"])
+
+	//设置初始的选项卡
+	setWatcher(Watchers["container"])
 	watcherBoarder := container.NewBorder(
 		container.NewVBox(title, widget.NewSeparator(), intro), nil, nil, nil, content)
 
@@ -105,6 +107,6 @@ func WatcherStart() {
 	w := a.NewWindow("beefine")
 	// 初始化窗口内容
 	w.SetContent(CreateWatcher())
-	w.Resize(fyne.NewSize(800, 600))
+	w.Resize(fyne.NewSize(1600, 800))
 	w.ShowAndRun()
 }

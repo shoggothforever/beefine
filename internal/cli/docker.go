@@ -16,6 +16,11 @@ import (
 	"time"
 )
 
+const (
+	containerStateRunning = "running"
+	containerStateExited  = "exited"
+)
+
 // DockerRunConfig 定义 docker run 的 JSON 配置结构
 type DockerRunConfig struct {
 	Image   string   `json:"image"`             // 镜像名称
@@ -185,7 +190,7 @@ func ListImage() ([]image.Summary, error) {
 
 // ListContainer 获取系统中的镜像
 func ListContainer() ([]types.Container, error) {
-	containers, err := cliInstance.ContainerList(ctx, container.ListOptions{})
+	containers, err := cliInstance.ContainerList(ctx, container.ListOptions{All: true})
 	if err != nil {
 		return nil, err
 	}
@@ -193,8 +198,22 @@ func ListContainer() ([]types.Container, error) {
 
 }
 
-// Stats 获取容器实时的性能数据
-func Stats(id string) (container.StatsResponseReader, error) {
-	stat, err := cliInstance.ContainerStats(ctx, id, false)
-	return stat, err
+func GetContainerStat(id string) (types.ContainerJSON, error) {
+	return cliInstance.ContainerInspect(ctx, id)
+}
+
+// CheckContainerRunningState 如果容器正常运行返回true
+func CheckContainerRunningState(status string) bool {
+	if status == containerStateRunning {
+		return true
+	}
+	return false
+}
+
+func ChangeContainerState(id string, oldState bool) error {
+	if oldState {
+		return cliInstance.ContainerStop(ctx, id, container.StopOptions{})
+	} else {
+		return cliInstance.ContainerStart(ctx, id, container.StartOptions{})
+	}
 }

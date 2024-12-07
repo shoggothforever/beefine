@@ -1,0 +1,41 @@
+#!/usr/bin/bpftrace
+// bpftrace -lv tracepoint:syscalls:sys_enter_clone
+//    int __syscall_nr
+//    unsigned long clone_flags
+//    unsigned long newsp
+//    int * parent_tidptr
+//    int * child_tidptr
+//    unsigned long tls
+tracepoint:syscalls:sys_enter_clone
+{ printf("clone called: pid=%d comm=%s flags=%x parent=%d,child=%d\n"
+,pid,comm, args->clone_flags,*args->parent_tidptr,*args->child_tidptr); }
+
+// bpftrace -lv tracepoint:syscalls:sys_enter_unshare
+//    int __syscall_nr
+//    unsigned long unshare_flags
+tracepoint:syscalls:sys_enter_unshare
+{ printf("unshare called: flags=%x\n", args->unshare_flags); }
+
+// bpftrace -lv tracepoint:syscalls:sys_enter_setns
+//    int __syscall_nr
+//    int fd
+//    int flags
+tracepoint:syscalls:sys_enter_setns
+{ printf("setns called: fd=%d, nstype=%x\n", args->fd, args->flags); }
+
+// bpftrace -lv tracepoint:syscalls:sys_enter_prctl
+//    int __syscall_nr
+//    int option
+//    unsigned long arg2
+//    unsigned long arg3
+//    unsigned long arg4
+//    unsigned long arg5
+tracepoint:syscalls:sys_enter_prctl { printf("prctl called: pid=%d comm=%s option=%d %d %d %d %d\n",pid,comm,args->option,args->arg2,args->arg3,args->arg4,args->arg5); }
+
+// bpftrace -lv kprobe:cgroup_attach_task
+kprobe:cgroup_attach_task { printf("cgroup_attach_task: pid=%d,comm=%s, cgroup_path=%s\n", pid,comm,str(arg1)); }
+
+
+kprobe:cgroup_create { printf("cgroup_create:pid=%d,comm=%s, cgroup_path=%s\n",pid,comm, str(arg1)); }
+
+

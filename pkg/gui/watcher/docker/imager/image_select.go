@@ -11,6 +11,7 @@ import (
 	"os"
 	"reflect"
 	"shoggothforever/beefine/bpf/image_prep"
+	"shoggothforever/beefine/bpf/mount"
 	"shoggothforever/beefine/internal/cli"
 	"slices"
 	"strings"
@@ -129,11 +130,10 @@ func NewToolBar(ImageLogs *widget.TextGrid, bpfLogs *widget.TextGrid) *fyne.Cont
 		imageSelector,
 		widget.NewSeparator(),
 		widget.NewCheck("unionFS", imageSelector.chooseUnionFS),
-		widget.NewCheck("volume/io", imageSelector.chooseVolume),
-		widget.NewCheck("cgroup", imageSelector.chooseCgroup),
-		widget.NewCheck("namespace", imageSelector.chooseNamespace),
+		widget.NewCheck("mount", imageSelector.chooseMount),
+		widget.NewCheck("network", imageSelector.chooseNetwork),
+		//widget.NewCheck("namespace", imageSelector.chooseNamespace),
 		widget.NewCheck("process", imageSelector.chooseProcess),
-		widget.NewCheck("cpu", imageSelector.chooseCpu),
 		jsonEditor,
 		runButton,
 	)
@@ -141,35 +141,60 @@ func NewToolBar(ImageLogs *widget.TextGrid, bpfLogs *widget.TextGrid) *fyne.Cont
 
 func (w *ImageSelect) chooseUnionFS(b bool) {
 	if b == true {
+		fmt.Println("choose watch unionfs")
 		req := image_prep.ImagePrepReq{}
 		out, cancel := image_prep.Start(&req)
 		w.cancelMap["chooseUnionFS"] = cancel
 		go func() {
 			strs := []string{"sudo", "beefine", "gmain", "gnome-terminal-", "gnome-shell", "systemd-oomd"}
-			for v := range out {
+			for event := range out {
 				//time.Sleep(time.Second)
-				comm := Bytes2String(v.Comm[:])
+				comm := Bytes2String(event.Comm[:])
 				if slices.Contains(strs, comm) {
 					break
 				}
 				w.m.Lock()
-				str := fmt.Sprintf("pid:%d,comm:%s,operation:%s", v.Pid, comm, Bytes2String(v.Operation[:]))
+				str := fmt.Sprintf("pid:%d,comm:%s,operation:%s", event.Pid, comm, Bytes2String(event.Operation[:]))
 				fmt.Println(str)
 				w.AppendLogInLock(w.bpfLogs, str)
 				w.m.Unlock()
 			}
 		}()
 	} else {
+		fmt.Println("cancel watch unionfs")
 		w.cancelMap["chooseUnionFS"]()
 	}
-	fmt.Println("choose watch unionfs")
-}
-
-func (w *ImageSelect) chooseVolume(b bool) {
 
 }
 
-func (w *ImageSelect) chooseCgroup(b bool) {
+func (w *ImageSelect) chooseMount(b bool) {
+	if b == true {
+		fmt.Println("choose watch mount")
+		req := mount.MountReq{}
+		out, cancel := mount.Start(&req)
+		w.cancelMap["chooseMount"] = cancel
+		go func() {
+			for event := range out {
+				//time.Sleep(time.Second)
+				w.m.Lock()
+				str := fmt.Sprintf("PID: %d, dev_name: %s, dir_name: %s, type: %s\n",
+					event.Pid,
+					bytes.Trim(event.DevName[:], "\x00"),
+					bytes.Trim(event.DirName[:], "\x00"),
+					bytes.Trim(event.Type[:], "\x00"))
+				fmt.Println(str)
+				w.AppendLogInLock(w.bpfLogs, str)
+				w.m.Unlock()
+			}
+		}()
+	} else {
+		fmt.Println("cancel watch mount")
+		w.cancelMap["chooseMount"]()
+	}
+
+}
+
+func (w *ImageSelect) chooseNetwork(b bool) {
 
 }
 
@@ -181,11 +206,8 @@ func (w *ImageSelect) chooseProcess(b bool) {
 
 }
 
-func (w *ImageSelect) chooseCpu(b bool) {
-
-}
-
 func (w *ImageSelect) AppendLogInLock(logs *widget.TextGrid, text string) {
+	// 将日志写入到本地，可以与其它框架结合起来使用
 	file, err := os.OpenFile("tmplog.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		fmt.Println(err)
@@ -199,10 +221,9 @@ func (w *ImageSelect) AppendLogInLock(logs *widget.TextGrid, text string) {
 		return
 	}
 	logs.SetRow(len(logs.Rows), widget.NewTextGridFromString(text).Row(0))
-	if len(logs.Rows) > 200 {
+	if len(logs.Rows) > 500 {
 		logs.SetText("")
 	}
-	//logs.SetText(text)
 }
 
 func (w *ImageSelect) OnChanged(s string) {
@@ -214,17 +235,6 @@ func (w *ImageSelect) OnChanged(s string) {
 		}
 	}
 }
-
-func String2Bytes(s string) []byte {
-	sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
-	bh := reflect.SliceHeader{
-		Data: sh.Data,
-		Len:  sh.Len,
-		Cap:  sh.Len,
-	}
-	return *(*[]byte)(unsafe.Pointer(&bh))
-}
-
 func Bytes2String(b []byte) string {
 	trimmedData := bytes.TrimRight(b, "\x00")
 	return *(*string)(unsafe.Pointer(&trimmedData))

@@ -1,0 +1,64 @@
+#!/usr/bin/env bpftrace
+
+
+// bpftrace -lv tracepoint:syscalls:sys_enter_socket
+//    int __syscall_nr
+//    int family
+//    int type
+//    int protocol
+tracepoint:syscalls:sys_enter_socket
+/comm!="vmtoolsd" && comm!="sudo"/
+{
+    printf("[socket] pid=%d comm=%s type=%d protocol=%d\n",
+        pid, comm, args->type, args->protocol);
+}
+
+
+// bpftrace -lv tracepoint:syscalls:sys_enter_bind
+//    int __syscall_nr
+//    int fd
+//    struct sockaddr * umyaddr
+//    int addrlen
+tracepoint:syscalls:sys_enter_bind
+/comm!="vmtoolsd" && comm!="sudo"/
+{
+    printf("[bind] pid=%d comm=%s sockfd=%d\n",pid, comm, args->fd);
+}
+// bpftrace -lv tracepoint:syscalls:sys_enter_listen
+tracepoint:syscalls:sys_enter_listen
+/comm!="vmtoolsd" && comm!="sudo"/
+{
+
+}
+
+
+// bpftrace -lv tracepoint:syscalls:sys_enter_accept
+//    int __syscall_nr
+//    int fd
+//    struct sockaddr * upeer_sockaddr
+//    int * upeer_addrlen
+tracepoint:syscalls:sys_enter_accept
+/comm!="vmtoolsd" && comm!="sudo"/
+{
+
+}
+
+// bpftrace -lv tracepoint:syscalls:sys_enter_connect
+//    int __syscall_nr
+//    int fd
+//    struct sockaddr * uservaddr
+//    int addrlen
+tracepoint:syscalls:sys_enter_connect
+/comm!="vmtoolsd" && comm!="sudo"/
+{
+    printf("[connect] pid=%d comm=%s sockfd=%d\n",
+        pid, comm, args->fd);
+}
+
+// bpftrace -lv tracepoint:syscalls:sys_enter_epoll_create
+tracepoint:syscalls:sys_enter_epoll_create
+/comm!="vmtoolsd" && comm!="sudo"/
+{
+    printf("[epoll_create] pid=%d comm=%s size=%d\n",
+        pid, comm, args->size);
+}

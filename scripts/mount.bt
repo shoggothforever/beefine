@@ -1,2 +1,11 @@
 #!/usr/bin/bpftrace
-bpftrace -e 'tracepoint:syscalls:sys_enter_mount { printf("pid:%d mount called: %s\n", pid,str(args->dir_name)) }'
+// bpftrace -lv tracepoint:syscalls:sys_enter_mount
+
+tracepoint:syscalls:sys_enter_mount
+{ printf("pid:%d mount dev_name: %s dir_name: %s type: %s\n",
+ pid,str(args->dev_name),str(args->dir_name),str(args->type)); }
+
+// bpftrace -lv tracepoint:syscalls:sys_exit_mount
+
+tracepoint:syscalls:sys_exit_mount
+{ printf("pid:%d mount exit_ret: %d\n", pid,args->ret); }
