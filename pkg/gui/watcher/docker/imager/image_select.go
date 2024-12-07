@@ -3,12 +3,15 @@ package imager
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	imaget "github.com/docker/docker/api/types/image"
+	"log"
 	"os"
+	"os/exec"
 	"reflect"
 	"shoggothforever/beefine/bpf/image_prep"
 	"shoggothforever/beefine/bpf/mount"
@@ -132,7 +135,7 @@ func NewToolBar(ImageLogs *widget.TextGrid, bpfLogs *widget.TextGrid) *fyne.Cont
 		widget.NewCheck("unionFS", imageSelector.chooseUnionFS),
 		widget.NewCheck("mount", imageSelector.chooseMount),
 		widget.NewCheck("network", imageSelector.chooseNetwork),
-		//widget.NewCheck("namespace", imageSelector.chooseNamespace),
+		widget.NewCheck("isolation", imageSelector.chooseIsolation),
 		widget.NewCheck("process", imageSelector.chooseProcess),
 		jsonEditor,
 		runButton,
@@ -195,11 +198,27 @@ func (w *ImageSelect) chooseMount(b bool) {
 }
 
 func (w *ImageSelect) chooseNetwork(b bool) {
-
+	if b == true {
+		fmt.Println("choose watch network")
+		ctx, cancel := context.WithCancel(context.TODO())
+		w.cancelMap["chooseNetwork"] = cancel
+		go w.runBPFTraceScript(ctx, netTracePointScript)
+	} else {
+		fmt.Println("cancel watch network")
+		w.cancelMap["chooseNetwork"]()
+	}
 }
 
-func (w *ImageSelect) chooseNamespace(b bool) {
-
+func (w *ImageSelect) chooseIsolation(b bool) {
+	if b == true {
+		fmt.Println("choose watch namespace and cgroup")
+		ctx, cancel := context.WithCancel(context.TODO())
+		w.cancelMap["chooseIsolation"] = cancel
+		go w.runBPFTraceScript(ctx, isolationTracePointScript)
+	} else {
+		fmt.Println("cancel watch namespace and cgroup")
+		w.cancelMap["chooseIsolation"]()
+	}
 }
 
 func (w *ImageSelect) chooseProcess(b bool) {
@@ -235,6 +254,61 @@ func (w *ImageSelect) OnChanged(s string) {
 		}
 	}
 }
+
+const (
+	netTracePointScript       = "scripts/net.bt"
+	isolationTracePointScript = "scripts/isolation.bt"
+)
+
+// Function to execute bpftrace script and read its output asynchronously
+func (w *ImageSelect) runBPFTraceScript(ctx context.Context, scriptPath string) {
+	// Prepare the bpftrace command with the script file as argument
+	cmd := exec.Command("bpftrace", scriptPath)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// Start the command asynchronously
+	err = cmd.Start()
+	if err != nil {
+		fmt.Printf("failed to start bpftrace: %v\n", err)
+		return
+	}
+	done := make(chan error)
+	go func() {
+		done <- cmd.Wait()
+	}()
+	// Start a goroutine to process the output asynchronously
+	scanner := bufio.NewScanner(stdout)
+	mp := make(map[string]struct{})
+	for {
+		select {
+		case <-done:
+			return
+		case <-ctx.Done():
+			if err := cmd.Process.Kill(); err != nil {
+				fmt.Printf("failed to kill process: %v", err)
+			}
+			return
+		default:
+			scanner.Scan()
+			// Process each line of output
+			w.m.Lock()
+			if _, ok := mp[scanner.Text()]; !ok {
+				mp[scanner.Text()] = struct{}{}
+				w.AppendLogInLock(w.bpfLogs, scanner.Text())
+				fmt.Println("bpftrace output:", scanner.Text())
+			}
+			w.m.Unlock()
+			// Check for scanning errors
+			if err := scanner.Err(); err != nil {
+				log.Printf("Error reading bpftrace output: %v", err)
+			}
+		}
+	}
+}
+
 func Bytes2String(b []byte) string {
 	trimmedData := bytes.TrimRight(b, "\x00")
 	return *(*string)(unsafe.Pointer(&trimmedData))

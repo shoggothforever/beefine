@@ -30,7 +30,10 @@ tracepoint:syscalls:sys_enter_setns
 //    unsigned long arg3
 //    unsigned long arg4
 //    unsigned long arg5
-tracepoint:syscalls:sys_enter_prctl { printf("prctl called: pid=%d comm=%s option=%d %d %d %d %d\n",pid,comm,args->option,args->arg2,args->arg3,args->arg4,args->arg5); }
+tracepoint:syscalls:sys_enter_prctl {
+$opt=args->option;
+printf("prctl called: pid=%d comm=%s option=%d\n",pid,comm,$opt);
+}
 
 // bpftrace -lv kprobe:cgroup_attach_task
 kprobe:cgroup_attach_task { printf("cgroup_attach_task: pid=%d,comm=%s, cgroup_path=%s\n", pid,comm,str(arg1)); }

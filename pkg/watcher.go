@@ -33,6 +33,7 @@ var WatcherIndex = map[string][]string{
 	"":       {"welcome", "BPF", "Docker"},
 	"Docker": {"imager", "container"},
 }
+var viewsSet = map[string][]fyne.CanvasObject{}
 
 func CreateTree(setWatcher func(t Watcher)) *widget.Tree {
 	a := fyne.CurrentApp()
@@ -83,7 +84,10 @@ func CreateWatcher() fyne.CanvasObject {
 		title.Hide()
 		intro.Hide()
 		if t.View != nil {
-			content.Objects = []fyne.CanvasObject{t.View(w)}
+			if _, ok := viewsSet[t.Title]; !ok {
+				viewsSet[t.Title] = []fyne.CanvasObject{t.View(w)}
+			}
+			content.Objects = viewsSet[t.Title]
 		}
 		content.Refresh()
 	}
