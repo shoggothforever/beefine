@@ -18,12 +18,12 @@ type ExecReq struct {
 	rb *ringbuf.Reader
 }
 type ExecRes struct {
-	Pid        int32
-	Prio       int32
-	DurationNs uint64
-	Comm       [16]byte
-	ExitEvent  bool
-	_          [7]byte
+	Pid       int32
+	Prio      int32
+	Ts        uint64
+	Comm      [16]byte
+	ExitEvent bool
+	_         [7]byte
 }
 
 func Start(req *ExecReq) (chan ExecRes, func()) {
@@ -37,7 +37,6 @@ func Start(req *ExecReq) (chan ExecRes, func()) {
 	if err := loadBpfObjects(&objs, nil); err != nil {
 		log.Fatalf("loading objects: %v", err)
 	}
-	// write your link code here
 	execStart, err := link.Tracepoint("sched", "sched_process_exec", objs.HandleExec, nil)
 	if err != nil {
 		log.Fatalf("opening tracepoint: %s", err)
@@ -70,12 +69,10 @@ func Start(req *ExecReq) (chan ExecRes, func()) {
 
 }
 func Action(objs bpfObjects, req *ExecReq, stopper chan struct{}) chan ExecRes {
-	// add your link logic here
 	out := make(chan ExecRes)
 	go func() {
 		var e ExecRes
 		for {
-			// write your logical code here
 			select {
 			case <-stopper:
 				return
@@ -85,14 +82,8 @@ func Action(objs bpfObjects, req *ExecReq, stopper chan struct{}) chan ExecRes {
 					log.Printf("reading ringbuf: %s", err)
 					return
 				}
-				// log.Printf("record: %v", record)
 				if err = binary.Read(bytes.NewReader(record.RawSample), binary.LittleEndian, &e); err != nil {
 					log.Printf("reading record: %s", err)
-				}
-				if e.ExitEvent {
-					log.Printf("exit ts: %v,prio:%d, pid: %d, comm: %s\n", e.DurationNs, e.Prio, e.Pid, e.Comm)
-				} else {
-					log.Printf("exec ts: %v, pid: %d, comm: %s\n", e.DurationNs, e.Pid, e.Comm)
 				}
 				out <- e
 				time.Sleep(1 * time.Second)

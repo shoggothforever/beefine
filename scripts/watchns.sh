@@ -17,6 +17,7 @@ showNamespace() {
 showNamespacePid() {
 cat /proc/$container_pid/status | grep NSpid
 }
+
 showCgroup(){
   cat /proc/$container_pid/cgroup
 }

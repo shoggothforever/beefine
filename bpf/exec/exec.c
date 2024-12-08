@@ -27,7 +27,7 @@ struct {
 struct event {
 	int pid;
 	int prio;
-	__u64 duration_ns;
+	__u64 ts;
 	char comm[TASK_COMM_LEN];
 	bool exit_event;
 };
@@ -54,10 +54,12 @@ int handle_exec(struct trace_event_raw_sched_process_exec *ctx)
 
 	e->exit_event = false;
 	e->pid = pid;
+	ts = bpf_ktime_get_ns();
+	e->ts=ts;
 	bpf_get_current_comm(&e->comm, sizeof(e->comm));
 	bpf_ringbuf_submit(e, 0);
 
-	ts = bpf_ktime_get_ns();
+
 	bpf_map_update_elem(&exec_start, &pid, &ts, BPF_ANY);
 
 
@@ -100,7 +102,7 @@ int handle_exit(struct trace_event_raw_sched_process_template *ctx)
 	bpf_map_delete_elem(&exec_start, &pid);
     e->prio=ctx->prio;
 	e->exit_event = true;
-	e->duration_ns = bpf_ktime_get_ns();
+	e->ts = bpf_ktime_get_ns();
 	e->pid = pid;
 	bpf_get_current_comm(&e->comm, sizeof(e->comm));
 

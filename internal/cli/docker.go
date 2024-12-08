@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"io"
+	"log"
 	"os/exec"
 	"strings"
 	"sync"
@@ -216,4 +217,46 @@ func ChangeContainerState(id string, oldState bool) error {
 	} else {
 		return cliInstance.ContainerStart(ctx, id, container.StartOptions{})
 	}
+}
+
+type DashBoardData struct {
+	CpuUsage     float64
+	MemUsage     float64
+	ContainerLen int
+	ImagesLen    int
+}
+
+func GetDockerDashBoardData() (*DashBoardData, error) {
+	containers, err := cliInstance.ContainerList(ctx, container.ListOptions{All: true})
+	if err != nil {
+		return nil, err
+	}
+	images, err := cliInstance.ImageList(ctx, image.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	var data DashBoardData
+	data.ContainerLen = len(containers)
+	data.ImagesLen = len(images)
+	for _, v := range containers {
+		stats, err := cliInstance.ContainerStats(context.Background(), v.ID, false)
+		if err != nil {
+			log.Fatalf("Error getting container stats: %v", err)
+		}
+		defer stats.Body.Close()
+		// 解析并显示统计信息
+		var statsJSON container.StatsResponse
+		if err := json.NewDecoder(stats.Body).Decode(&statsJSON); err != nil {
+			log.Fatalf("Error decoding stats: %v", err)
+		}
+		// 输出容器的 CPU 和内存使用情况
+		data.CpuUsage += float64(statsJSON.CPUStats.CPUUsage.TotalUsage) / float64(statsJSON.CPUStats.SystemUsage) * 100
+		data.MemUsage += float64(statsJSON.MemoryStats.Usage / statsJSON.MemoryStats.Limit / (1024 * 1024)) // 转换为 MB
+
+		//fmt.Printf("CPU Usage: %.2f%%\n", cpuUsage)
+		//fmt.Printf("Memory Usage: %.2fMB / %.2fMB\n", float64(memUsage), float64(statsJSON.MemoryStats.Limit)/(1024*1024)) // 显示内存限制
+
+	}
+
+	return &data, nil
 }

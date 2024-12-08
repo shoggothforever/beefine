@@ -13,10 +13,10 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
+	exec2 "shoggothforever/beefine/bpf/exec"
 	"shoggothforever/beefine/bpf/image_prep"
 	"shoggothforever/beefine/bpf/mount"
 	"shoggothforever/beefine/internal/cli"
-	"slices"
 	"strings"
 	"sync"
 	"unsafe"
@@ -88,7 +88,6 @@ func NewToolBar(ImageLogs *widget.TextGrid, bpfLogs *widget.TextGrid) *fyne.Cont
 	})
 	imagePuller.SetPlaceHolder("Enter image name to pull")
 	imagePuller.OnSubmitted = pullImageFunc
-
 	imageSelector := NewImageSelect()
 	imageSelector.imageLogs = ImageLogs
 	imageSelector.bpfLogs = bpfLogs
@@ -97,7 +96,7 @@ func NewToolBar(ImageLogs *widget.TextGrid, bpfLogs *widget.TextGrid) *fyne.Cont
 	jsonEditor.SetPlaceHolder(`{
     "image": "nginx",
     "name": "my-container",
-    "ports": [],
+    "ports": ["80:80"],
     "volumes": [],
     "env": [],
     "detach": true,
@@ -107,13 +106,15 @@ func NewToolBar(ImageLogs *widget.TextGrid, bpfLogs *widget.TextGrid) *fyne.Cont
 		input := jsonEditor.Text
 		result, err := cli.ParseAndRunDockerRun(input, imageSelector.base.Selected)
 		//result, err := cli.ExecDockerCmd(input)
+		imageSelector.m.Lock()
 		if err != nil {
 			// 显示错误信息
-			ImageLogs.SetText(fmt.Sprintf("Error: %v\n%s", err, result))
+			imageSelector.AppendLogInLock(ImageLogs, fmt.Sprintf("Error: %v\n%s", err, result))
 		} else {
 			// 显示成功信息
-			ImageLogs.SetText(fmt.Sprintf("Success:\n%s", result))
+			imageSelector.AppendLogInLock(ImageLogs, fmt.Sprintf("Success:\n%s", result))
 		}
+		imageSelector.m.Unlock()
 	}
 	jsonEditor.OnSubmitted = func(s string) {
 		onClick()
@@ -149,13 +150,9 @@ func (w *ImageSelect) chooseUnionFS(b bool) {
 		out, cancel := image_prep.Start(&req)
 		w.cancelMap["chooseUnionFS"] = cancel
 		go func() {
-			strs := []string{"sudo", "beefine", "gmain", "gnome-terminal-", "gnome-shell", "systemd-oomd"}
 			for event := range out {
 				//time.Sleep(time.Second)
 				comm := Bytes2String(event.Comm[:])
-				if slices.Contains(strs, comm) {
-					break
-				}
 				w.m.Lock()
 				str := fmt.Sprintf("pid:%d,comm:%s,operation:%s", event.Pid, comm, Bytes2String(event.Operation[:]))
 				fmt.Println(str)
@@ -182,10 +179,9 @@ func (w *ImageSelect) chooseMount(b bool) {
 				w.m.Lock()
 				str := fmt.Sprintf("PID: %d, dev_name: %s, dir_name: %s, type: %s\n",
 					event.Pid,
-					bytes.Trim(event.DevName[:], "\x00"),
-					bytes.Trim(event.DirName[:], "\x00"),
-					bytes.Trim(event.Type[:], "\x00"))
-				fmt.Println(str)
+					Bytes2String(event.DevName[:]),
+					Bytes2String(event.DirName[:]),
+					Bytes2String(event.Type[:]))
 				w.AppendLogInLock(w.bpfLogs, str)
 				w.m.Unlock()
 			}
@@ -222,7 +218,29 @@ func (w *ImageSelect) chooseIsolation(b bool) {
 }
 
 func (w *ImageSelect) chooseProcess(b bool) {
-
+	if b == true {
+		fmt.Println("choose watch process")
+		req := &exec2.ExecReq{}
+		out, cancel := exec2.Start(req)
+		w.cancelMap["chooseProcess"] = cancel
+		go func() {
+			mp := make(map[string]uint64)
+			for e := range out {
+				w.m.Lock()
+				comm := Bytes2String(e.Comm[:])
+				if e.ExitEvent {
+					w.AppendLogInLock(w.bpfLogs, fmt.Sprintf("exit duration_ns:%v,prio:%d, pid: %d, comm: %s\n", e.Ts-mp[comm], e.Prio, e.Pid, comm))
+				} else {
+					mp[comm] = e.Ts
+					w.AppendLogInLock(w.bpfLogs, fmt.Sprintf("exec pid: %d, comm: %s\n", e.Pid, comm))
+				}
+				w.m.Unlock()
+			}
+		}()
+	} else {
+		fmt.Println("cancel watch process")
+		w.cancelMap["chooseProcess"]()
+	}
 }
 
 func (w *ImageSelect) AppendLogInLock(logs *widget.TextGrid, text string) {
