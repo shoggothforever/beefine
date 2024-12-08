@@ -250,9 +250,13 @@ func GetDockerDashBoardData() (*DashBoardData, error) {
 			log.Fatalf("Error decoding stats: %v", err)
 		}
 		// 输出容器的 CPU 和内存使用情况
-		data.CpuUsage += float64(statsJSON.CPUStats.CPUUsage.TotalUsage) / float64(statsJSON.CPUStats.SystemUsage) * 100
-		data.MemUsage += float64(statsJSON.MemoryStats.Usage / statsJSON.MemoryStats.Limit / (1024 * 1024)) // 转换为 MB
+		if statsJSON.CPUStats.SystemUsage != 0 {
+			data.CpuUsage += float64(statsJSON.CPUStats.CPUUsage.TotalUsage) / float64(statsJSON.CPUStats.SystemUsage) * 100
 
+		}
+		if statsJSON.MemoryStats.Limit != 0 {
+			data.MemUsage += float64(statsJSON.MemoryStats.Usage / statsJSON.MemoryStats.Limit / (1024 * 1024)) // 转换为 MB
+		}
 		//fmt.Printf("CPU Usage: %.2f%%\n", cpuUsage)
 		//fmt.Printf("Memory Usage: %.2fMB / %.2fMB\n", float64(memUsage), float64(statsJSON.MemoryStats.Limit)/(1024*1024)) // 显示内存限制
 

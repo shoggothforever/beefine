@@ -63,8 +63,8 @@ func Screen(w fyne.Window) fyne.CanvasObject {
 				imageCountLabel.SetText(fmt.Sprintf("Images: %d", usageData.ImagesLen))
 
 				// 更新 CPU 和内存使用情况
-				cpuUsageBar.SetValue(usageData.CpuUsage / float64(100))
-				memoryUsageBar.SetValue(usageData.MemUsage / float64(4))
+				cpuUsageBar.SetValue(usageData.CpuUsage)
+				memoryUsageBar.SetValue(usageData.MemUsage)
 			}
 		}
 	}(imageCountLabel, cpuUsageBar)

@@ -75,10 +75,10 @@ func (w *ContainersSelect) OnChanged(s string) {
 		fmt.Println("update currentContainer ", w.currentContainer.ID)
 		if cli.CheckContainerRunningState(w.currentContainer.Status) {
 			w.containerButton.SetText("stop container")
-			w.AppendLogInLock(w.containerLogs, fmt.Sprintf("container %s is stopped", w.currentContainer.ID[:16]))
+			w.AppendLogInLock(w.containerLogs, fmt.Sprintf("container %s is running", w.currentContainer.ID[:16]))
 		} else {
 			w.containerButton.SetText("start container")
-			w.AppendLogInLock(w.containerLogs, fmt.Sprintf("container %s is running", w.currentContainer.ID[:16]))
+			w.AppendLogInLock(w.containerLogs, fmt.Sprintf("container %s is stopped", w.currentContainer.ID[:16]))
 		}
 	}
 
@@ -102,46 +102,124 @@ func (w *ContainersSelect) OnClick() {
 		w.AppendLogInLock(w.containerLogs, fmt.Sprintf("stop container %s", w.currentContainer.ID[:16]))
 	}
 }
+
 func NewContainerToolBar(containerLogs *widget.TextGrid, bpfLogs *widget.TextGrid) *fyne.Container {
-	containerSelector := NewContainersSelect(containerLogs, bpfLogs)
+	cst := NewContainersSelect(containerLogs, bpfLogs)
 	return container.NewVBox(
-		containerSelector,
+		cst,
 		widget.NewSeparator(),
-		containerSelector.containerButton,
-		widget.NewCheck("volume/io", containerSelector.chooseVolume),
-		widget.NewCheck("cgroup", containerSelector.chooseCgroup),
-		widget.NewCheck("namespace", containerSelector.chooseNamespace),
-		widget.NewCheck("process", containerSelector.chooseProcess),
-		widget.NewCheck("cpu", containerSelector.chooseCpu),
-		widget.NewCheck("memory", containerSelector.chooseCpu),
+		cst.containerButton,
+		widget.NewCheck("diskInfo", cst.chooseDiskInfo),
+		widget.NewCheck("isolationInfo", cst.chooseIsolationInfo),
+		widget.NewCheck("netInfo", cst.chooseNetInfo),
+		widget.NewCheck("process", cst.chooseProcess),
+		widget.NewCheck("cpu", cst.chooseCpu),
+		widget.NewCheck("memory", cst.chooseCpu),
 	)
 }
 
-func (w *ContainersSelect) chooseVolume(b bool) {
+func (w *ContainersSelect) chooseDiskInfo(b bool) {
+	if w.currentContainer == nil {
+		return
+	}
 	if b {
-
+		w.m.Lock()
+		if len(w.currentContainer.Mounts) == 0 {
+			w.m.Unlock()
+			w.AppendLogInLock(w.containerLogs, fmt.Sprintf("no Volumes used by container "))
+			return
+		}
+		w.AppendLogInLock(w.containerLogs, "Volumes used by container:")
+		for _, v := range w.currentContainer.Mounts {
+			w.AppendLogInLock(w.containerLogs, fmt.Sprintf("Volume tyep: %s name:%s des:%s src:%s \n", v.Type, v.Name[:8], v.Destination, v.Source))
+		}
+		w.m.Unlock()
+		// TODO:需要补充加载绑定容器ID的bpf程序的功能(disk IO)
 	} else {
 
 	}
 }
 
-func (w *ContainersSelect) chooseCgroup(b bool) {
+func (w *ContainersSelect) chooseIsolationInfo(b bool) {
+	if w.currentContainer == nil {
+		return
+	}
 	if b {
-
+		w.m.Lock()
+		stat, err := cli.GetContainerStat(w.currentContainer.ID)
+		if err != nil {
+			return
+		}
+		if stat.State.Pid == 0 {
+			w.m.Unlock()
+			w.AppendLogInLock(w.containerLogs, "container not start")
+			return
+		}
+		pid := stat.State.Pid
+		w.AppendLogInLock(w.containerLogs, fmt.Sprintf("container's pid is %d", pid))
+		nsPath := fmt.Sprintf("/proc/%d/ns", pid)
+		w.AppendLogInLock(w.containerLogs, nsPath)
+		// 读取 /proc/{pid}/ns 目录内容
+		files, err := os.ReadDir(nsPath)
+		if err != nil {
+			return
+		}
+		for _, file := range files {
+			w.AppendLogInLock(w.containerLogs, fmt.Sprintf("%s: %s\n", file.Name(), nsPath+"/"+file.Name()))
+		}
+		statusPath := fmt.Sprintf("/proc/%d/status", stat.State.Pid)
+		w.AppendLogInLock(w.containerLogs, fmt.Sprintf("reading pid in namespaces : %s ", statusPath))
+		data, err := os.ReadFile(statusPath)
+		if err != nil {
+			return
+		}
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			if strings.HasPrefix(line, "PPid") {
+				w.AppendLogInLock(w.containerLogs, line)
+			}
+			if strings.HasPrefix(line, "NSpid") {
+				w.AppendLogInLock(w.containerLogs, line)
+			}
+			if strings.HasPrefix(line, "Seccomp") {
+				w.AppendLogInLock(w.containerLogs, line)
+			}
+		}
+		cgroupPath := fmt.Sprintf("/proc/%d/cgroup", stat.State.Pid)
+		w.AppendLogInLock(w.containerLogs, fmt.Sprintf("reading cgroup file: %s ", cgroupPath))
+		// 读取 /proc/{pid}/cgroup 文件
+		data, err = os.ReadFile(cgroupPath)
+		if err != nil {
+			return
+		}
+		w.AppendLogInLock(w.containerLogs, string(data))
+		w.m.Unlock()
 	} else {
 
 	}
+	// TODO:需要补充加载绑定容器ID的bpf程序的功能 (seccomp,prctl,cgroup_create,cgroup_attach,set_ns)
 }
 
-func (w *ContainersSelect) chooseNamespace(b bool) {
+func (w *ContainersSelect) chooseNetInfo(b bool) {
+	if w.currentContainer == nil {
+		return
+	}
 	if b {
-
+		w.m.Lock()
+		w.AppendLogInLock(w.containerLogs, "Networks used by container:")
+		for networkName, network := range w.currentContainer.NetworkSettings.Networks {
+			w.AppendLogInLock(w.containerLogs, fmt.Sprintf("Network: %s, IP Address: %s\n", networkName, network.IPAddress))
+		}
+		w.m.Unlock()
 	} else {
 
 	}
 }
 
 func (w *ContainersSelect) chooseProcess(b bool) {
+	if w.currentContainer == nil {
+		return
+	}
 	if b {
 
 	} else {
@@ -150,6 +228,9 @@ func (w *ContainersSelect) chooseProcess(b bool) {
 }
 
 func (w *ContainersSelect) chooseCpu(b bool) {
+	if w.currentContainer == nil {
+		return
+	}
 	if b {
 
 	} else {
@@ -157,6 +238,9 @@ func (w *ContainersSelect) chooseCpu(b bool) {
 	}
 }
 func (w *ContainersSelect) chooseMemory(b bool) {
+	if w.currentContainer == nil {
+		return
+	}
 	if b {
 
 	} else {
