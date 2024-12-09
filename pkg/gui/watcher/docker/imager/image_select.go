@@ -201,6 +201,21 @@ func (w *ImageSelect) AppendLogInLock(logs *widget.TextGrid, text string) {
 }
 
 func (w *ImageSelect) OnChanged(s string) {
+	w.m.Lock()
+	defer w.m.Unlock()
+	images, err := cli.ListImage()
+	if err != nil {
+		return
+	}
+	w.images = images
+	var imagetags []string
+	for _, v := range images {
+		for _, tag := range v.RepoTags {
+			imagetags = append(imagetags, tag)
+			break
+		}
+	}
+	w.base.SetOptions(imagetags)
 	for k, v := range w.images {
 		if len(v.RepoTags) > 0 && v.RepoTags[0] == s {
 			w.currentImageIndex = k

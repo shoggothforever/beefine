@@ -272,6 +272,5 @@ func GetDockerDashBoardData() (*DashBoardData, error) {
 			data.MemUsage += float64(statsJSON.MemoryStats.Usage / statsJSON.MemoryStats.Limit / (1024 * 1024)) // 转换为 MB
 		}
 	}
-
 	return &data, nil
 }

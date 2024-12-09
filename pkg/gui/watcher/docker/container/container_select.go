@@ -70,6 +70,8 @@ func (w *ContainersSelect) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (w *ContainersSelect) OnChanged(s string) {
+	w.m.Lock()
+	defer w.m.Unlock()
 	// 初始化 Select
 	containers, err := cli.ListContainer()
 	if err != nil {
@@ -86,15 +88,15 @@ func (w *ContainersSelect) OnChanged(s string) {
 		}
 	}
 	w.base.SetOptions(containertags)
-	if _, ok := w.containers[s]; ok {
-		w.currentContainer = w.containers[s]
-		fmt.Println("update currentContainer ", w.currentContainer.ID)
-		if cli.CheckContainerRunningState(w.currentContainer.Status) {
+	if v, ok := w.containers[s]; ok {
+		w.currentContainer = v
+		fmt.Println("update currentContainer ", v.ID)
+		if cli.CheckContainerRunningState(v.Status) {
 			w.containerButton.SetText("stop container")
-			w.AppendLogInLock(w.containerLogs, fmt.Sprintf("container %s is running", w.currentContainer.ID[:16]))
+			w.AppendLogInLock(w.containerLogs, fmt.Sprintf("container %s is running", v.ID[:16]))
 		} else {
 			w.containerButton.SetText("start container")
-			w.AppendLogInLock(w.containerLogs, fmt.Sprintf("container %s is stopped", w.currentContainer.ID[:16]))
+			w.AppendLogInLock(w.containerLogs, fmt.Sprintf("container %s is stopped", v.ID[:16]))
 		}
 	}
 	for _, cancel := range w.cancelMap {
@@ -104,6 +106,8 @@ func (w *ContainersSelect) OnChanged(s string) {
 	}
 }
 func (w *ContainersSelect) OnClick() {
+	w.m.Lock()
+	defer w.m.Unlock()
 	if w.currentContainer == nil {
 		return
 	}
@@ -139,7 +143,7 @@ func NewContainerToolBar(containerLogs *widget.TextGrid, bpfLogs *widget.TextGri
 }
 
 func (w *ContainersSelect) chooseDiskInfo(b bool) {
-	if w.currentContainer == nil {
+	if !w.checkBeforeChoose() {
 		return
 	}
 	if b {
@@ -166,7 +170,7 @@ func (w *ContainersSelect) chooseDiskInfo(b bool) {
 }
 
 func (w *ContainersSelect) chooseIsolationInfo(b bool) {
-	if w.currentContainer == nil {
+	if !w.checkBeforeChoose() {
 		return
 	}
 	if b {
@@ -226,7 +230,7 @@ func (w *ContainersSelect) chooseIsolationInfo(b bool) {
 }
 
 func (w *ContainersSelect) chooseNetInfo(b bool) {
-	if w.currentContainer == nil {
+	if !w.checkBeforeChoose() {
 		return
 	}
 	if b {
@@ -248,7 +252,7 @@ func (w *ContainersSelect) chooseNetInfo(b bool) {
 }
 
 func (w *ContainersSelect) chooseProcess(b bool) {
-	if w.currentContainer == nil {
+	if !w.checkBeforeChoose() {
 		return
 	}
 	if b == true {
@@ -259,8 +263,8 @@ func (w *ContainersSelect) chooseProcess(b bool) {
 			return
 		}
 		if stat.State.Pid == 0 {
+			w.AppendLogInLock(w.containerLogs, "container init failed")
 			w.m.Unlock()
-			w.AppendLogInLock(w.containerLogs, "container not start")
 			return
 		}
 		pid := stat.State.Pid
@@ -292,7 +296,7 @@ func (w *ContainersSelect) chooseProcess(b bool) {
 }
 
 func (w *ContainersSelect) chooseCpu(b bool) {
-	if w.currentContainer == nil {
+	if !w.checkBeforeChoose() {
 		return
 	}
 	if b {
@@ -309,7 +313,7 @@ func (w *ContainersSelect) chooseCpu(b bool) {
 	}
 }
 func (w *ContainersSelect) chooseMemory(b bool) {
-	if w.currentContainer == nil {
+	if !w.checkBeforeChoose() {
 		return
 	}
 	if b {
@@ -325,7 +329,12 @@ func (w *ContainersSelect) chooseMemory(b bool) {
 
 	}
 }
-
+func (w *ContainersSelect) checkBeforeChoose() bool {
+	if w.currentContainer == nil {
+		return false
+	}
+	return true
+}
 func (w *ContainersSelect) AppendLogInLock(logs *widget.TextGrid, text string) {
 	file, err := os.OpenFile("tmplog.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
