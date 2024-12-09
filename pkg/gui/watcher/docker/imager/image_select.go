@@ -6,18 +6,15 @@ import (
 	"context"
 	"fmt"
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	imaget "github.com/docker/docker/api/types/image"
 	"log"
 	"os"
 	"os/exec"
-	"reflect"
 	exec2 "shoggothforever/beefine/bpf/exec"
 	"shoggothforever/beefine/bpf/image_prep"
 	"shoggothforever/beefine/bpf/mount"
 	"shoggothforever/beefine/internal/cli"
-	"strings"
 	"sync"
 	"unsafe"
 )
@@ -70,79 +67,6 @@ func (w *ImageSelect) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(w.base)
 }
 
-func NewToolBar(ImageLogs *widget.TextGrid, bpfLogs *widget.TextGrid) *fyne.Container {
-	// 筛选工具栏
-	imagePuller := widget.NewEntry()
-	// entry与button的事件触发函数
-	pullImageFunc := func(s string) {
-		imageName := s
-		ImageLogs.SetText(fmt.Sprintf("pulling %s image\n", s))
-		pullInfo, err := cli.PullDockerImage(imageName)
-		if err != nil {
-			return
-		}
-		ImageLogs.SetText(pullInfo)
-	}
-	imagePullerButton := widget.NewButton("Pull                  				", func() {
-		pullImageFunc(imagePuller.Text)
-	})
-	imagePuller.SetPlaceHolder("Enter image name to pull")
-	imagePuller.OnSubmitted = pullImageFunc
-	imageSelector := NewImageSelect()
-	imageSelector.imageLogs = ImageLogs
-	imageSelector.bpfLogs = bpfLogs
-	jsonEditor := widget.NewMultiLineEntry()
-	jsonEditor.SetMinRowsVisible(8)
-	jsonEditor.SetPlaceHolder(`{
-    "image": "nginx",
-    "name": "my-container",
-    "ports": ["80:80"],
-    "volumes": [],
-    "env": [],
-    "detach": true,
-    "rm": true
-	}`)
-	onClick := func() {
-		input := jsonEditor.Text
-		result, err := cli.ParseAndRunDockerRun(input, imageSelector.base.Selected)
-		//result, err := cli.ExecDockerCmd(input)
-		imageSelector.m.Lock()
-		if err != nil {
-			// 显示错误信息
-			imageSelector.AppendLogInLock(ImageLogs, fmt.Sprintf("Error: %v\n%s", err, result))
-		} else {
-			// 显示成功信息
-			imageSelector.AppendLogInLock(ImageLogs, fmt.Sprintf("Success:\n%s", result))
-		}
-		imageSelector.m.Unlock()
-	}
-	jsonEditor.OnSubmitted = func(s string) {
-		onClick()
-	}
-	runButton := widget.NewButton("run", onClick)
-	v := reflect.TypeOf(imageSelector)
-	for i := 0; i < v.NumMethod(); i++ {
-		m := v.Method(i)
-		//fmt.Println(m.Name)
-		if strings.HasPrefix(m.Name, "choose") {
-			imageSelector.cancelMap[m.Name] = nil
-		}
-	}
-	return container.NewVBox(
-		imagePuller,
-		imagePullerButton,
-		imageSelector,
-		widget.NewSeparator(),
-		widget.NewCheck("unionFS", imageSelector.chooseUnionFS),
-		widget.NewCheck("mount", imageSelector.chooseMount),
-		widget.NewCheck("network", imageSelector.chooseNetwork),
-		widget.NewCheck("isolation", imageSelector.chooseIsolation),
-		widget.NewCheck("process", imageSelector.chooseProcess),
-		jsonEditor,
-		runButton,
-	)
-}
-
 func (w *ImageSelect) chooseUnionFS(b bool) {
 	if b == true {
 		fmt.Println("choose watch unionfs")
@@ -162,7 +86,10 @@ func (w *ImageSelect) chooseUnionFS(b bool) {
 		}()
 	} else {
 		fmt.Println("cancel watch unionfs")
-		w.cancelMap["chooseUnionFS"]()
+		if w.cancelMap["chooseUnionFS"] != nil {
+			w.cancelMap["chooseUnionFS"]()
+		}
+
 	}
 
 }
@@ -175,7 +102,6 @@ func (w *ImageSelect) chooseMount(b bool) {
 		w.cancelMap["chooseMount"] = cancel
 		go func() {
 			for event := range out {
-				//time.Sleep(time.Second)
 				w.m.Lock()
 				str := fmt.Sprintf("PID: %d, dev_name: %s, dir_name: %s, type: %s\n",
 					event.Pid,
@@ -188,7 +114,10 @@ func (w *ImageSelect) chooseMount(b bool) {
 		}()
 	} else {
 		fmt.Println("cancel watch mount")
-		w.cancelMap["chooseMount"]()
+		if w.cancelMap["chooseMount"] != nil {
+			w.cancelMap["chooseMount"]()
+		}
+
 	}
 
 }
@@ -201,7 +130,10 @@ func (w *ImageSelect) chooseNetwork(b bool) {
 		go w.runBPFTraceScript(ctx, netTracePointScript)
 	} else {
 		fmt.Println("cancel watch network")
-		w.cancelMap["chooseNetwork"]()
+		if w.cancelMap["chooseNetwork"] != nil {
+			w.cancelMap["chooseNetwork"]()
+		}
+
 	}
 }
 
@@ -213,7 +145,10 @@ func (w *ImageSelect) chooseIsolation(b bool) {
 		go w.runBPFTraceScript(ctx, isolationTracePointScript)
 	} else {
 		fmt.Println("cancel watch namespace and cgroup")
-		w.cancelMap["chooseIsolation"]()
+		if w.cancelMap["chooseIsolation"] != nil {
+			w.cancelMap["chooseIsolation"]()
+		}
+
 	}
 }
 
@@ -239,7 +174,9 @@ func (w *ImageSelect) chooseProcess(b bool) {
 		}()
 	} else {
 		fmt.Println("cancel watch process")
-		w.cancelMap["chooseProcess"]()
+		if w.cancelMap["chooseProcess"] != nil {
+			w.cancelMap["chooseProcess"]()
+		}
 	}
 }
 
@@ -272,11 +209,6 @@ func (w *ImageSelect) OnChanged(s string) {
 		}
 	}
 }
-
-const (
-	netTracePointScript       = "scripts/net.bt"
-	isolationTracePointScript = "scripts/isolation.bt"
-)
 
 // Function to execute bpftrace script and read its output asynchronously
 func (w *ImageSelect) runBPFTraceScript(ctx context.Context, scriptPath string) {

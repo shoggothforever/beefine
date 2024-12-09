@@ -14,8 +14,12 @@ import (
 // remove -type event if you won't use diy struct in kernel
 
 //go:generate go run github.com/cilium/ebpf/cmd/bpf2go -type event -target bpfel  bpf exec.c -- -I  /sys/kernel/btf
+
+const CgMapKey int32 = 0
+
 type ExecReq struct {
-	rb *ringbuf.Reader
+	ContainerPid int32
+	rb           *ringbuf.Reader
 }
 type ExecRes struct {
 	Pid       int32
@@ -59,8 +63,9 @@ func Start(req *ExecReq) (chan ExecRes, func()) {
 				execExit.Close()
 				req.rb.Close()
 				// close attach
-				close(out)
 				close(stopper)
+				time.Sleep(1 * time.Second)
+				close(out)
 			})
 		}
 	}
@@ -72,6 +77,12 @@ func Action(objs bpfObjects, req *ExecReq, stopper chan struct{}) chan ExecRes {
 	out := make(chan ExecRes)
 	go func() {
 		var e ExecRes
+		err := objs.CgPidMap.Put(CgMapKey, req.ContainerPid)
+		if err != nil {
+			log.Printf("unable to set cgmap, cg_pid:%d\n ,%s", req.ContainerPid, err.Error())
+			return
+		}
+		log.Printf("container's pid: %d\n", req.ContainerPid)
 		for {
 			select {
 			case <-stopper:
@@ -79,14 +90,19 @@ func Action(objs bpfObjects, req *ExecReq, stopper chan struct{}) chan ExecRes {
 			default:
 				record, err := req.rb.Read()
 				if err != nil {
-					log.Printf("reading ringbuf: %s", err)
+					log.Printf("reading ringbuf: %s\n", err)
 					return
 				}
 				if err = binary.Read(bytes.NewReader(record.RawSample), binary.LittleEndian, &e); err != nil {
-					log.Printf("reading record: %s", err)
+					log.Printf("reading record: %s\n", err)
 				}
+				var pid int32
+				err = objs.CgPidMap.Lookup(CgMapKey, &pid)
+				if err != nil {
+					log.Printf("unable to lookup cgmap, cg_pid:%d,%s\n", req.ContainerPid, err.Error())
+				}
+				log.Printf("catch pid is %d\n", e.Pid)
 				out <- e
-				time.Sleep(1 * time.Second)
 			}
 		}
 	}()

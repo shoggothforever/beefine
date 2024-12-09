@@ -13,12 +13,12 @@ import (
 )
 
 type bpfEvent struct {
-	Pid        int32
-	Prio       int32
-	DurationNs uint64
-	Comm       [16]int8
-	ExitEvent  bool
-	_          [7]byte
+	Pid       int32
+	Prio      int32
+	Ts        uint64
+	Comm      [16]int8
+	ExitEvent bool
+	_         [7]byte
 }
 
 // loadBpf returns the embedded CollectionSpec for bpf.
@@ -70,8 +70,8 @@ type bpfProgramSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
-	ExecStart *ebpf.MapSpec `ebpf:"exec_start"`
-	Rb        *ebpf.MapSpec `ebpf:"rb"`
+	CgPidMap *ebpf.MapSpec `ebpf:"cg_pid_map"`
+	Rb       *ebpf.MapSpec `ebpf:"rb"`
 }
 
 // bpfObjects contains all objects after they have been loaded into the kernel.
@@ -93,13 +93,13 @@ func (o *bpfObjects) Close() error {
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
-	ExecStart *ebpf.Map `ebpf:"exec_start"`
-	Rb        *ebpf.Map `ebpf:"rb"`
+	CgPidMap *ebpf.Map `ebpf:"cg_pid_map"`
+	Rb       *ebpf.Map `ebpf:"rb"`
 }
 
 func (m *bpfMaps) Close() error {
 	return _BpfClose(
-		m.ExecStart,
+		m.CgPidMap,
 		m.Rb,
 	)
 }

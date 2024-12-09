@@ -1,17 +1,23 @@
 package imager
 
 import (
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"math/rand"
-	"strconv"
-	"time"
+	"reflect"
+	"shoggothforever/beefine/internal/cli"
+	"strings"
 )
 
 const PKGName = "imager"
 
 var tabUIButtonFuncMap = map[string]func() fyne.CanvasObject{}
+
+const (
+	netTracePointScript       = "scripts/net.bt"
+	isolationTracePointScript = "scripts/isolation.bt"
+)
 
 // Screen
 func Screen(w fyne.Window) fyne.CanvasObject {
@@ -25,6 +31,7 @@ func Screen(w fyne.Window) fyne.CanvasObject {
 	// image 日志
 	ImageLogs := widget.NewTextGrid()
 	ImageLogs.SetText("Container-Creating Logs")
+	ImageLogs.ShowLineNumbers = true
 	ImageLogsScroll := container.NewScroll(ImageLogs)
 	ImageLogsScroll.SetMinSize(fyne.NewSize(400, 200)) // 限制宽度为 400，高度为 200
 
@@ -40,20 +47,75 @@ func Screen(w fyne.Window) fyne.CanvasObject {
 	return content
 }
 
-// simulateImageData 模拟实时数据更新
-func simulateImageData(logs *widget.TextGrid) {
-	for {
-		// 模拟随机更新镜像层数据
-		layer := rand.Intn(4) // 4 层镜像层
-		value := rand.Intn(20) + 10
-		laystr := strconv.Itoa(layer)
-		valstr := strconv.Itoa(value)
-		// 更新日志
-		logEntry := time.Now().Format("15:04:05") + " - Layer " + laystr + ": Wrote " + valstr + "MB"
-		logs.SetRow(len(logs.Rows), widget.NewTextGridFromString(logEntry).Row(0))
-		// 模拟滚动：将光标移动到文本末尾
-		//logs.CursorRow = len(logs.Text)
-		logs.Refresh()
-		time.Sleep(2 * time.Second)
+func NewToolBar(ImageLogs *widget.TextGrid, bpfLogs *widget.TextGrid) *fyne.Container {
+	// 筛选工具栏
+	imagePuller := widget.NewEntry()
+	// entry与button的事件触发函数
+	pullImageFunc := func(s string) {
+		imageName := s
+		ImageLogs.SetText(fmt.Sprintf("pulling %s image\n", s))
+		pullInfo, err := cli.PullDockerImage(imageName)
+		if err != nil {
+			return
+		}
+		ImageLogs.SetText(pullInfo)
 	}
+	imagePullerButton := widget.NewButton("Pull                  				", func() {
+		pullImageFunc(imagePuller.Text)
+	})
+	imagePuller.SetPlaceHolder("Enter image name to pull")
+	imagePuller.OnSubmitted = pullImageFunc
+	imageSelector := NewImageSelect()
+	imageSelector.imageLogs = ImageLogs
+	imageSelector.bpfLogs = bpfLogs
+	jsonEditor := widget.NewMultiLineEntry()
+	jsonEditor.SetMinRowsVisible(8)
+	jsonEditor.SetPlaceHolder(`{
+    "image": "nginx",
+    "name": "my-container",
+    "ports": ["80:80"],
+    "volumes": [],
+    "env": [],
+    "detach": true,
+    "rm": true
+	}`)
+	onClick := func() {
+		input := jsonEditor.Text
+		result, err := cli.ParseAndRunDockerRun(input, imageSelector.base.Selected)
+		//result, err := cli.ExecDockerCmd(input)
+		imageSelector.m.Lock()
+		if err != nil {
+			// 显示错误信息
+			imageSelector.AppendLogInLock(ImageLogs, fmt.Sprintf("Error: %v\n%s", err, result))
+		} else {
+			// 显示成功信息
+			imageSelector.AppendLogInLock(ImageLogs, fmt.Sprintf("Success:\n%s", result))
+		}
+		imageSelector.m.Unlock()
+	}
+	jsonEditor.OnSubmitted = func(s string) {
+		onClick()
+	}
+	runButton := widget.NewButton("run", onClick)
+	v := reflect.TypeOf(imageSelector)
+	for i := 0; i < v.NumMethod(); i++ {
+		m := v.Method(i)
+		//fmt.Println(m.Name)
+		if strings.HasPrefix(m.Name, "choose") {
+			imageSelector.cancelMap[m.Name] = nil
+		}
+	}
+	return container.NewVBox(
+		imagePuller,
+		imagePullerButton,
+		imageSelector,
+		widget.NewSeparator(),
+		widget.NewCheck("unionFS", imageSelector.chooseUnionFS),
+		widget.NewCheck("mount", imageSelector.chooseMount),
+		widget.NewCheck("network", imageSelector.chooseNetwork),
+		widget.NewCheck("isolation", imageSelector.chooseIsolation),
+		//widget.NewCheck("process", imageSelector.chooseProcess),
+		jsonEditor,
+		runButton,
+	)
 }

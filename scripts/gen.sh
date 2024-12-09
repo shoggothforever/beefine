@@ -43,8 +43,8 @@ func Start(req *${PACKAGE_NAME^}Req) ( chan ${PACKAGE_NAME^}Res,func()) {
   			once.Do(func() {
   				objs.Close()
   				// close attach
+          close(stopper)
   				close(out)
-  				close(stopper)
   			})
   		}
   	}

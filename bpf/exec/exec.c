@@ -12,21 +12,21 @@
 const volatile unsigned long long min_duration_ns = 0;
 
 char LICENSE[] SEC("license") = "Dual BSD/GPL";
-
+const int32 container_map_key=0;
 struct {
-    __uint(type,BPF_MAP_TYPE_HASH);
-    __uint(max_entries,2048);
-    __type(key,int);
-    __type(value,__u64);
-} exec_start SEC(".maps");
+    __uint(type,BPF_MAP_TYPE_ARRAY);
+    __uint(max_entries,1024);
+    __type(key,int32);
+    __type(value,int32);
+} cg_pid_map SEC(".maps");
 struct {
 	__uint(type, BPF_MAP_TYPE_RINGBUF);
 	__uint(max_entries, 256 * 1024);
 } rb SEC(".maps");
 
 struct event {
-	int pid;
-	int prio;
+	int32 pid;
+	int32 prio;
 	__u64 ts;
 	char comm[TASK_COMM_LEN];
 	bool exit_event;
@@ -39,14 +39,15 @@ int handle_exec(struct trace_event_raw_sched_process_exec *ctx)
 	unsigned fname_off;
 	struct event *e;
 	int pid;
+	int *cg_pid;
 	__u64 ts;
 
 	/* remember time exec() was executed for this PID */
 	pid = bpf_get_current_pid_tgid() >> 32;
     /* don't emit exec events when minimum duration is specified */
-	if (min_duration_ns)
-		return 0;
-
+    cg_pid=bpf_map_lookup_elem(&cg_pid_map,&container_map_key);
+    if (!cg_pid)
+        return 0;
 	/* reserve sample from BPF ringbuf */
 	e = bpf_ringbuf_reserve(&rb, sizeof(*e), 0);
 	if (!e)
@@ -58,11 +59,6 @@ int handle_exec(struct trace_event_raw_sched_process_exec *ctx)
 	e->ts=ts;
 	bpf_get_current_comm(&e->comm, sizeof(e->comm));
 	bpf_ringbuf_submit(e, 0);
-
-
-	bpf_map_update_elem(&exec_start, &pid, &ts, BPF_ANY);
-
-
 	/* successfully submit it to user-space for post-processing */
 
 	return 0;
@@ -74,6 +70,7 @@ int handle_exit(struct trace_event_raw_sched_process_template *ctx)
 {
 	struct event *e;
 	int pid, tid,prio;
+    int *cg_pid;
 	__u64 id, ts, *start_ts, duration_ns = 0;
 	/* get PID and TID of exiting thread/process */
 	id = bpf_get_current_pid_tgid();
@@ -82,9 +79,9 @@ int handle_exit(struct trace_event_raw_sched_process_template *ctx)
 	/* ignore thread exits */
 	if (pid != tid)
 		return 0;
-    /* if process didn't live long enough, return early */
-	if (min_duration_ns && duration_ns < min_duration_ns)
-		return 0;
+    cg_pid=bpf_map_lookup_elem(&cg_pid_map,&container_map_key);
+    if (!cg_pid)
+        return 0;
 
 	/* reserve sample from BPF ringbuf */
 	e = bpf_ringbuf_reserve(&rb, sizeof(struct event), 0);
@@ -94,12 +91,9 @@ int handle_exit(struct trace_event_raw_sched_process_template *ctx)
 	/* fill out the sample with data */
 	// task = (struct task_struct *)bpf_get_current_task();
 	/* if we recorded start of the process, calculate lifetime duration */
-	start_ts = bpf_map_lookup_elem(&exec_start, &pid);
-	if (start_ts)
-		duration_ns = bpf_ktime_get_ns() - *start_ts;
-	else if (min_duration_ns)
-		return 0;
-	bpf_map_delete_elem(&exec_start, &pid);
+//	start_ts = bpf_map_lookup_elem(&ct, &pid);
+
+	bpf_map_delete_elem(&cg_pid_map, &pid);
     e->prio=ctx->prio;
 	e->exit_event = true;
 	e->ts = bpf_ktime_get_ns();

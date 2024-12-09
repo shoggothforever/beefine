@@ -8,6 +8,8 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 	"io"
 	"log"
@@ -199,8 +201,14 @@ func ListContainer() ([]types.Container, error) {
 
 }
 
-func GetContainerStat(id string) (types.ContainerJSON, error) {
+func ContainerInspect(id string) (types.ContainerJSON, error) {
 	return cliInstance.ContainerInspect(ctx, id)
+}
+func VolumeInspect(id string) (volume.Volume, error) {
+	return cliInstance.VolumeInspect(ctx, id)
+}
+func NetWorkInspect(id string) (network.Inspect, error) {
+	return cliInstance.NetworkInspect(ctx, id, network.InspectOptions{})
 }
 
 // CheckContainerRunningState 如果容器正常运行返回true
@@ -226,6 +234,19 @@ type DashBoardData struct {
 	ImagesLen    int
 }
 
+func GetContainerStatJson(id string) (container.StatsResponse, error) {
+	stats, err := cliInstance.ContainerStats(ctx, id, false)
+	if err != nil {
+		log.Fatalf("Error getting container stats: %v", err)
+	}
+	defer stats.Body.Close()
+	// 解析并显示统计信息
+	var statsJSON container.StatsResponse
+	if err := json.NewDecoder(stats.Body).Decode(&statsJSON); err != nil {
+		log.Fatalf("Error decoding stats: %v", err)
+	}
+	return statsJSON, err
+}
 func GetDockerDashBoardData() (*DashBoardData, error) {
 	containers, err := cliInstance.ContainerList(ctx, container.ListOptions{All: true})
 	if err != nil {
@@ -239,27 +260,17 @@ func GetDockerDashBoardData() (*DashBoardData, error) {
 	data.ContainerLen = len(containers)
 	data.ImagesLen = len(images)
 	for _, v := range containers {
-		stats, err := cliInstance.ContainerStats(context.Background(), v.ID, false)
+		statsJSON, err := GetContainerStatJson(v.ID)
 		if err != nil {
 			log.Fatalf("Error getting container stats: %v", err)
-		}
-		defer stats.Body.Close()
-		// 解析并显示统计信息
-		var statsJSON container.StatsResponse
-		if err := json.NewDecoder(stats.Body).Decode(&statsJSON); err != nil {
-			log.Fatalf("Error decoding stats: %v", err)
 		}
 		// 输出容器的 CPU 和内存使用情况
 		if statsJSON.CPUStats.SystemUsage != 0 {
 			data.CpuUsage += float64(statsJSON.CPUStats.CPUUsage.TotalUsage) / float64(statsJSON.CPUStats.SystemUsage) * 100
-
 		}
 		if statsJSON.MemoryStats.Limit != 0 {
 			data.MemUsage += float64(statsJSON.MemoryStats.Usage / statsJSON.MemoryStats.Limit / (1024 * 1024)) // 转换为 MB
 		}
-		//fmt.Printf("CPU Usage: %.2f%%\n", cpuUsage)
-		//fmt.Printf("Memory Usage: %.2fMB / %.2fMB\n", float64(memUsage), float64(statsJSON.MemoryStats.Limit)/(1024*1024)) // 显示内存限制
-
 	}
 
 	return &data, nil
