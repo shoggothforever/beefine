@@ -48,6 +48,8 @@ int handle_exec(struct trace_event_raw_sched_process_exec *ctx)
     cg_pid=bpf_map_lookup_elem(&cg_pid_map,&container_map_key);
     if (!cg_pid)
         return 0;
+    if(pid != *cg_pid)
+        return 0;
 	/* reserve sample from BPF ringbuf */
 	e = bpf_ringbuf_reserve(&rb, sizeof(*e), 0);
 	if (!e)
@@ -82,7 +84,10 @@ int handle_exit(struct trace_event_raw_sched_process_template *ctx)
     cg_pid=bpf_map_lookup_elem(&cg_pid_map,&container_map_key);
     if (!cg_pid)
         return 0;
-
+    struct task_struct *task = (struct task_struct *)bpf_get_current_task();
+    __u32 host_ppid = BPF_CORE_READ(task,real_parent,tgid);
+    if (pid != *cg_pid)
+        return 0;
 	/* reserve sample from BPF ringbuf */
 	e = bpf_ringbuf_reserve(&rb, sizeof(struct event), 0);
 	if (!e)

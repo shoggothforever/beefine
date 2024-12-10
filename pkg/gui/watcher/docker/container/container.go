@@ -1,47 +1,44 @@
 package container
 
 import (
-	"bytes"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/widget"
 	"github.com/docker/docker/api/types"
+	"shoggothforever/beefine/pkg/component"
 	"strings"
-	"unsafe"
 )
 
-const PKGName = "container"
+const (
+	PKGName         = "container"
+	GetNsPeerScript = "scripts/nswatch.sh"
+)
 
 var tabUIButtonFuncMap = map[string]func() fyne.CanvasObject{}
 
 // Screen
 func Screen(w fyne.Window) fyne.CanvasObject {
 	// 动态bpf日志区域
-	bpfLogs := widget.NewTextGrid()
-	bpfLogs.ShowLineNumbers = true
-	bpfLogs.SetText("Real-Time BpfLogs")
-	//bpfLogs.
-	bpfLogsScroll := container.NewScroll(bpfLogs)
-	bpfLogsScroll.SetMinSize(fyne.NewSize(600, 200)) // 限制宽度为 400，高度为 200
+	bpfLogs := component.NewLogBoard("Real-Time BpfLogs", 600, 200)
+	//bpfLogs.ShowLineNumbers = true
+	//bpfLogs.SetText("Real-Time BpfLogs")
+	////bpfLogs.
+	//bpfLogsScroll := container.NewScroll(bpfLogs)
+	//bpfLogsScroll.SetMinSize(fyne.NewSize(600, 200)) // 限制宽度为 600，高度为 200
 	// image 日志
-	containerLogs := widget.NewTextGrid()
-	containerLogs.ShowLineNumbers = true
-	containerLogs.SetText("Container-Creating Logs")
-	ImageLogsScroll := container.NewScroll(containerLogs)
-	ImageLogsScroll.SetMinSize(fyne.NewSize(600, 200)) // 限制宽度为 400，高度为 200
+	containerLogs := component.NewLogBoard("Container-Creating Logs", 600, 200)
+	//containerLogs.ShowLineNumbers = true
+	//containerLogs.SetText("Container-Creating Logs")
+	//containerScroll := container.NewScroll(containerLogs)
+	//containerScroll.SetMinSize(fyne.NewSize(600, 200)) // 限制宽度为 600，高度为 200
 
 	//var bpfChoices
 	toolbar := NewContainerToolBar(containerLogs, bpfLogs)
 	content := container.NewHBox(
 		toolbar,
-		ImageLogsScroll,
-		bpfLogsScroll,
+		containerLogs,
+		bpfLogs,
 	)
 	return content
-}
-func Bytes2String(b []byte) string {
-	trimmedData := bytes.TrimRight(b, "\x00")
-	return *(*string)(unsafe.Pointer(&trimmedData))
 }
 
 func buildTag(name string, c *types.Container) string {

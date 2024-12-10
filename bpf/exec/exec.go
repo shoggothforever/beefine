@@ -96,12 +96,10 @@ func Action(objs bpfObjects, req *ExecReq, stopper chan struct{}) chan ExecRes {
 				if err = binary.Read(bytes.NewReader(record.RawSample), binary.LittleEndian, &e); err != nil {
 					log.Printf("reading record: %s\n", err)
 				}
-				var pid int32
-				err = objs.CgPidMap.Lookup(CgMapKey, &pid)
 				if err != nil {
 					log.Printf("unable to lookup cgmap, cg_pid:%d,%s\n", req.ContainerPid, err.Error())
 				}
-				log.Printf("catch pid is %d\n", e.Pid)
+				//log.Printf("catch pid is %d\n", pid)
 				out <- e
 			}
 		}

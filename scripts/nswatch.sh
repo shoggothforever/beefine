@@ -12,15 +12,15 @@ NS_TYPE=$2
 
 # 获取目标 Namespace ID
 NS_ID=$(sudo readlink "/proc/$TARGET_PID/ns/$NS_TYPE" |  sed -n 's/.*\[\([0-9]*\)\].*/\1/p' )
-echo "get ns_id $NS_ID"
+#echo "get ns_id $NS_ID"
 if [ -z "$NS_ID" ]; then
     echo "Error: Failed to retrieve Namespace ID for PID $TARGET_PID and type $NS_TYPE."
     exit 1
 fi
 
 echo "Namespace Type: $NS_TYPE"
-echo "Namespace ID: $NS_ID"
-echo "Processes in the same namespace:"
+#echo "Namespace ID: $NS_ID"
+echo "peers in the same namespace:"
 for pid in $(ls /proc | grep '^[0-9]\+$'); do
         CURRENT_NS_ID=$(sudo readlink /proc/$pid/ns/$NS_TYPE | grep -o '[0-9]\+')
         if [ "$CURRENT_NS_ID" == "$NS_ID" ]; then

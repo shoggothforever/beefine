@@ -2,7 +2,6 @@ package imager
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"fmt"
 	"fyne.io/fyne/v2"
@@ -15,8 +14,8 @@ import (
 	"shoggothforever/beefine/bpf/image_prep"
 	"shoggothforever/beefine/bpf/mount"
 	"shoggothforever/beefine/internal/cli"
+	"shoggothforever/beefine/internal/helper"
 	"sync"
-	"unsafe"
 )
 
 // MyCustomWidget 是自定义控件，包装了 Select 并添加了额外的字段
@@ -76,9 +75,9 @@ func (w *ImageSelect) chooseUnionFS(b bool) {
 		go func() {
 			for event := range out {
 				//time.Sleep(time.Second)
-				comm := Bytes2String(event.Comm[:])
+				comm := helper.Bytes2String(event.Comm[:])
 				w.m.Lock()
-				str := fmt.Sprintf("pid:%d,comm:%s,operation:%s", event.Pid, comm, Bytes2String(event.Operation[:]))
+				str := fmt.Sprintf("pid:%d,comm:%s,operation:%s", event.Pid, comm, helper.Bytes2String(event.Operation[:]))
 				fmt.Println(str)
 				w.AppendLogInLock(w.bpfLogs, str)
 				w.m.Unlock()
@@ -105,9 +104,9 @@ func (w *ImageSelect) chooseMount(b bool) {
 				w.m.Lock()
 				str := fmt.Sprintf("PID: %d, dev_name: %s, dir_name: %s, type: %s\n",
 					event.Pid,
-					Bytes2String(event.DevName[:]),
-					Bytes2String(event.DirName[:]),
-					Bytes2String(event.Type[:]))
+					helper.Bytes2String(event.DevName[:]),
+					helper.Bytes2String(event.DirName[:]),
+					helper.Bytes2String(event.Type[:]))
 				w.AppendLogInLock(w.bpfLogs, str)
 				w.m.Unlock()
 			}
@@ -162,7 +161,7 @@ func (w *ImageSelect) chooseProcess(b bool) {
 			mp := make(map[string]uint64)
 			for e := range out {
 				w.m.Lock()
-				comm := Bytes2String(e.Comm[:])
+				comm := helper.Bytes2String(e.Comm[:])
 				if e.ExitEvent {
 					w.AppendLogInLock(w.bpfLogs, fmt.Sprintf("exit duration_ns:%v,prio:%d, pid: %d, comm: %s\n", e.Ts-mp[comm], e.Prio, e.Pid, comm))
 				} else {
@@ -272,9 +271,4 @@ func (w *ImageSelect) runBPFTraceScript(ctx context.Context, scriptPath string) 
 			}
 		}
 	}
-}
-
-func Bytes2String(b []byte) string {
-	trimmedData := bytes.TrimRight(b, "\x00")
-	return *(*string)(unsafe.Pointer(&trimmedData))
 }
