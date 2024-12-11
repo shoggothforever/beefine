@@ -212,7 +212,27 @@ bash
 
 ## 文件结构 `
 
-``├── cmd/                     # 主程序入口 ` `│   └── main.go              # 项目启动文件 ` `├── pkg/                     # 核心功能实现 ` `│   ├── gui/                 # Fyne GUI 相关代码 ` `│   │   ├── app.go           # GUI 应用逻辑 ` `│   │   └── docker.go        # Docker 功能界面 ` `│   ├── ebpf/                # eBPF 相关逻辑 ` `│   │   ├── loader.go        # eBPF 程序加载 ` `│   │   └── observer.go      # eBPF 数据处理 ` `│   └── dockerutil/          # Docker 操作工具 ` `│       ├── client.go        # Docker 客户端管理 ` `│       ├── image.go         # 镜像操作 ` `│       └── container.go     # 容器操作 ` `├── go.mod                   # Go 模块文件 ` `└── README.md                # 项目文档 `
+``
+├── bpf/                     # 主程序入口 ` `
+│   ├──*/                    # bpf2go与libbpf结合bpf程序 ` `
+│   └──vmlinux.h             # bpf 的 btf文件 ` `
+├── pkg/                     # 可以导出的包,提供可以复用的组件和逻辑代码 ` `
+│   │── gui/                 # Fyne GUI 相关代码 ` `
+│   │  ├── themes/           # 存放fyneUI 设计的功能代码 ` `
+│   │  └── watcher/          # Docker 功能界面 ` `
+│   └── component/           # 存放自定义的的fyne组件 ` `
+├── internal/                # Docker 操作工具 ` `
+│   ├── cli/                 # Docker以及脚本交互管理 ` `
+│   ├── data/                # fyne资源管理 ` `
+│   └── helper               # 通用辅助函数 ` `
+├── configs/                 # 项目配置  ` `
+├── scripts/                 # 存放脚本文件 ` `
+├── test/                    # 存放测试用例以及脚本 ` `
+├── main.go                  # GO 程序入口
+├── go.mod                   # Go 模块文件 ` `
+├── makefile                 # 项目编译脚本
+├── license                  # 证书文件
+└── README.md                # 项目文档 `
 
 ---
 
