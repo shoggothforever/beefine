@@ -212,27 +212,27 @@ bash
 
 ## 文件结构 `
 
-``
-├── bpf/                     # 主程序入口 ` `
-│   ├──*/                    # bpf2go与libbpf结合bpf程序 ` `
-│   └──vmlinux.h             # bpf 的 btf文件 ` `
-├── pkg/                     # 可以导出的包,提供可以复用的组件和逻辑代码 ` `
-│   │── gui/                 # Fyne GUI 相关代码 ` `
-│   │  ├── themes/           # 存放fyneUI 设计的功能代码 ` `
-│   │  └── watcher/          # Docker 功能界面 ` `
-│   └── component/           # 存放自定义的的fyne组件 ` `
-├── internal/                # Docker 操作工具 ` `
-│   ├── cli/                 # Docker以及脚本交互管理 ` `
-│   ├── data/                # fyne资源管理 ` `
-│   └── helper               # 通用辅助函数 ` `
-├── configs/                 # 项目配置  ` `
-├── scripts/                 # 存放脚本文件 ` `
-├── test/                    # 存放测试用例以及脚本 ` `
-├── main.go                  # GO 程序入口
-├── go.mod                   # Go 模块文件 ` `
-├── makefile                 # 项目编译脚本
-├── license                  # 证书文件
-└── README.md                # 项目文档 `
+``<br>
+├── bpf/                     # 主程序入口 <br>
+│   ├──*/                    # bpf2go与libbpf结合bpf程序 <br>
+│   └──vmlinux.h             # bpf 的 btf文件 ` `<br>
+├── pkg/                     # 可以导出的包,提供可以复用的组件和逻辑代码 ` `<br>
+│   │── gui/                 # Fyne GUI 相关代码 ` `<br>
+│   │  ├── themes/           # 存放fyneUI 设计的功能代码 ` `<br>
+│   │  └── watcher/          # Docker 功能界面 ` `<br>
+│   └── component/           # 存放自定义的的fyne组件 ` `<br>
+├── internal/                # Docker 操作工具 ` `<br>
+│   ├── cli/                 # Docker以及脚本交互管理 ` `<br>
+│   ├── data/                # fyne资源管理 ` `<br>
+│   └── helper               # 通用辅助函数 ` `<br>
+├── configs/                 # 项目配置  ` `<br>
+├── scripts/                 # 存放脚本文件 ` `<br>
+├── test/                    # 存放测试用例以及脚本 ` ` <br>
+├── main.go                  # GO 程序入口 <br>
+├── go.mod                   # Go 模块文件 ` ` <br>
+├── makefile                 # 项目编译脚本 <br>
+├── license                  # 证书文件 <br>
+└── README.md                # 项目文档 ` <br>
 
 ---
 
