@@ -1,7 +1,6 @@
 package imager
 
 import (
-	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -45,12 +44,12 @@ func NewToolBar(ImageLogs *component.LogBoard, bpfLogs *component.LogBoard) *fyn
 	// entry与button的事件触发函数
 	pullImageFunc := func(s string) {
 		imageName := s
-		ImageLogs.AppendLog(fmt.Sprintf("pulling %s image\n", s))
+		ImageLogs.AppendLogf("pulling %s image\n", s)
 		pullInfo, err := cli.PullDockerImage(imageName)
 		if err != nil {
 			return
 		}
-		ImageLogs.AppendLog(pullInfo)
+		ImageLogs.AppendLogf(pullInfo)
 	}
 	imagePullerButton := widget.NewButton("Pull                  				", func() {
 		pullImageFunc(imagePuller.Text)
@@ -77,10 +76,10 @@ func NewToolBar(ImageLogs *component.LogBoard, bpfLogs *component.LogBoard) *fyn
 		//result, err := cli.ExecDockerCmd(input)
 		if err != nil {
 			// 显示错误信息
-			ImageLogs.AppendLog(fmt.Sprintf("Error: %v\n%s", err, result))
+			ImageLogs.AppendLogf("Error: %v\n%s", err, result)
 		} else {
 			// 显示成功信息
-			ImageLogs.AppendLog(fmt.Sprintf("Success:\n%s", result))
+			ImageLogs.AppendLogf("Success:\n%s", result)
 		}
 	}
 	jsonEditor.OnSubmitted = func(s string) {
@@ -100,7 +99,7 @@ func NewToolBar(ImageLogs *component.LogBoard, bpfLogs *component.LogBoard) *fyn
 		imagePullerButton,
 		imageSelector,
 		widget.NewSeparator(),
-		widget.NewCheck("unionFS", imageSelector.chooseUnionFS),
+		widget.NewCheck("VFS", imageSelector.chooseVFS),
 		widget.NewCheck("mount", imageSelector.chooseMount),
 		widget.NewCheck("network", imageSelector.chooseNetwork),
 		widget.NewCheck("isolation", imageSelector.chooseIsolation),

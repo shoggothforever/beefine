@@ -67,12 +67,12 @@ func (w *ImageSelect) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(w.base)
 }
 
-func (w *ImageSelect) chooseUnionFS(b bool) {
+func (w *ImageSelect) chooseVFS(b bool) {
 	if b == true {
 		w.bpfLogs.AppendLogf("choose watch unionfs")
 		req := image_prep.ImagePrepReq{}
 		out, cancel := image_prep.Start(&req)
-		w.cancelMap["chooseUnionFS"] = cancel
+		w.cancelMap["chooseVFS"] = cancel
 		go func() {
 			for event := range out {
 				comm := helper.Bytes2String(event.Comm[:])
@@ -80,9 +80,9 @@ func (w *ImageSelect) chooseUnionFS(b bool) {
 			}
 		}()
 	} else {
-		w.bpfLogs.AppendLogf("cancel watch unionfs")
-		if w.cancelMap["chooseUnionFS"] != nil {
-			w.cancelMap["chooseUnionFS"]()
+		w.bpfLogs.AppendLogf("cancel watch chooseVFS")
+		if w.cancelMap["chooseVFS"] != nil {
+			w.cancelMap["chooseVFS"]()
 		}
 
 	}
@@ -237,7 +237,6 @@ func (w *ImageSelect) runBPFTraceScript(ctx context.Context, scriptPath string) 
 			if _, ok := mp[scanner.Text()]; !ok {
 				mp[scanner.Text()] = 1
 				w.bpfLogs.AppendLogf(scanner.Text())
-				fmt.Println("bpftrace output:", scanner.Text())
 			} else {
 				mp[scanner.Text()]++
 			}

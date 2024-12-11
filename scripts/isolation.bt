@@ -55,7 +55,7 @@ tracepoint:cgroup:cgroup_attach_task
     __data_loc char[] comm
 */
 tracepoint:cgroup:cgroup_attach_task
-{ printf("[cgroup_attach_task] pid=%d,comm=%s, cgroup_path=%s\n", pid,comm,str(args->dst_path)); }
+{ printf("[cgroup_attach_task] comm=%s, cgroup_path=%s\n", comm,str(args->dst_path)); }
 kprobe:cgroup_create
 { printf("[cgroup_create]pid=%d,comm=%s",pid,comm); }
 

@@ -7,6 +7,7 @@ import (
 	"github.com/cilium/ebpf/ringbuf"
 	"github.com/cilium/ebpf/rlimit"
 	"log"
+	"shoggothforever/beefine/internal/helper"
 	"sync"
 )
 
@@ -92,6 +93,9 @@ func Action(objs bpfObjects, req *ImagePrepReq, stopper chan struct{}) chan Imag
 				if err = binary.Read(bytes.NewReader(record.RawSample), binary.LittleEndian, &event); err != nil {
 					log.Printf("reading record: %s", err)
 					return
+				}
+				if helper.Bytes2String(event.Comm[:]) == "systemd-oomd" {
+					continue
 				}
 				out <- event
 
