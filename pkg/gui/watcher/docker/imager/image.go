@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"reflect"
 	"shoggothforever/beefine/internal/cli"
+	"shoggothforever/beefine/pkg/component"
 	"strings"
 )
 
@@ -22,18 +23,9 @@ const (
 // Screen
 func Screen(w fyne.Window) fyne.CanvasObject {
 	// 动态bpf日志区域
-	bpfLogs := widget.NewTextGrid()
-	bpfLogs.ShowLineNumbers = true
-	bpfLogs.SetText("Real-Time BpfLogs")
-	//bpfLogs.
-	bpfLogsScroll := container.NewScroll(bpfLogs)
-	bpfLogsScroll.SetMinSize(fyne.NewSize(400, 200)) // 限制宽度为 400，高度为 200
+	bpfLogs := component.NewLogBoard("Real-Time BpfLogs", 600, 200)
 	// image 日志
-	ImageLogs := widget.NewTextGrid()
-	ImageLogs.SetText("Container-Creating Logs")
-	ImageLogs.ShowLineNumbers = true
-	ImageLogsScroll := container.NewScroll(ImageLogs)
-	ImageLogsScroll.SetMinSize(fyne.NewSize(400, 200)) // 限制宽度为 400，高度为 200
+	ImageLogs := component.NewLogBoard("Container-Creating Logs", 600, 200)
 
 	//var bpfChoices
 	toolbar := NewToolBar(ImageLogs, bpfLogs)
@@ -41,24 +33,24 @@ func Screen(w fyne.Window) fyne.CanvasObject {
 	//go simulateImageData(bpfLogs)
 	content := container.NewHBox(
 		toolbar,
-		ImageLogsScroll,
-		bpfLogsScroll,
+		ImageLogs,
+		bpfLogs,
 	)
 	return content
 }
 
-func NewToolBar(ImageLogs *widget.TextGrid, bpfLogs *widget.TextGrid) *fyne.Container {
+func NewToolBar(ImageLogs *component.LogBoard, bpfLogs *component.LogBoard) *fyne.Container {
 	// 筛选工具栏
 	imagePuller := widget.NewEntry()
 	// entry与button的事件触发函数
 	pullImageFunc := func(s string) {
 		imageName := s
-		ImageLogs.SetText(fmt.Sprintf("pulling %s image\n", s))
+		ImageLogs.AppendLog(fmt.Sprintf("pulling %s image\n", s))
 		pullInfo, err := cli.PullDockerImage(imageName)
 		if err != nil {
 			return
 		}
-		ImageLogs.SetText(pullInfo)
+		ImageLogs.AppendLog(pullInfo)
 	}
 	imagePullerButton := widget.NewButton("Pull                  				", func() {
 		pullImageFunc(imagePuller.Text)
@@ -83,15 +75,13 @@ func NewToolBar(ImageLogs *widget.TextGrid, bpfLogs *widget.TextGrid) *fyne.Cont
 		input := jsonEditor.Text
 		result, err := cli.ParseAndRunDockerRun(input, imageSelector.base.Selected)
 		//result, err := cli.ExecDockerCmd(input)
-		imageSelector.m.Lock()
 		if err != nil {
 			// 显示错误信息
-			imageSelector.AppendLogInLock(ImageLogs, fmt.Sprintf("Error: %v\n%s", err, result))
+			ImageLogs.AppendLog(fmt.Sprintf("Error: %v\n%s", err, result))
 		} else {
 			// 显示成功信息
-			imageSelector.AppendLogInLock(ImageLogs, fmt.Sprintf("Success:\n%s", result))
+			ImageLogs.AppendLog(fmt.Sprintf("Success:\n%s", result))
 		}
-		imageSelector.m.Unlock()
 	}
 	jsonEditor.OnSubmitted = func(s string) {
 		onClick()

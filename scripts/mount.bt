@@ -2,10 +2,10 @@
 // bpftrace -lv tracepoint:syscalls:sys_enter_mount
 
 tracepoint:syscalls:sys_enter_mount
-{ printf("pid:%d mount dev_name: %s dir_name: %s type: %s\n",
+{ printf("[mount] pid:%d  dev_name: %s dir_name: %s type: %s\n",
  pid,str(args->dev_name),str(args->dir_name),str(args->type)); }
 
 // bpftrace -lv tracepoint:syscalls:sys_exit_mount
 
 tracepoint:syscalls:sys_exit_mount
-{ printf("pid:%d mount exit_ret: %d\n", pid,args->ret); }
+{ printf("[mount] pid:%d exit_ret: %d\n", pid,args->ret); }

@@ -98,10 +98,10 @@ func (w *ContainersSelect) OnChanged(s string) {
 		fmt.Println("update currentContainer ", v.ID)
 		if cli.CheckContainerRunningState(v.Status) {
 			w.containerButton.SetText("stop container")
-			w.containerLogs.AppendLog(fmt.Sprintf("container %s is running", v.ID[:16]))
+			w.containerLogs.AppendLogf("container %s is running", v.ID[:16])
 		} else {
 			w.containerButton.SetText("start container")
-			w.containerLogs.AppendLog(fmt.Sprintf("container %s is stopped", v.ID[:16]))
+			w.containerLogs.AppendLogf("container %s is stopped", v.ID[:16])
 		}
 	}
 	for _, cancel := range w.cancelMap {
@@ -125,10 +125,10 @@ func (w *ContainersSelect) OnClick() {
 	w.containers[buildTag(w.currentContainer.Names[0], w.currentContainer)] = w.currentContainer
 	if cli.CheckContainerRunningState(w.currentContainer.Status) {
 		w.containerButton.SetText("stop container")
-		w.containerLogs.AppendLog(fmt.Sprintf("start container %s ", w.currentContainer.ID[:16]))
+		w.containerLogs.AppendLogf("start container %s ", w.currentContainer.ID[:16])
 	} else {
 		w.containerButton.SetText("start container")
-		w.containerLogs.AppendLog(fmt.Sprintf("stop container %s", w.currentContainer.ID[:16]))
+		w.containerLogs.AppendLogf("stop container %s", w.currentContainer.ID[:16])
 	}
 }
 
@@ -155,17 +155,17 @@ func (w *ContainersSelect) chooseDiskInfo(b bool) {
 		w.m.Lock()
 		if len(w.currentContainer.Mounts) == 0 {
 			w.m.Unlock()
-			w.containerLogs.AppendLog(fmt.Sprintf("no Volumes used by container "))
+			w.containerLogs.AppendLogf("no Volumes used by container ")
 			return
 		}
-		w.containerLogs.AppendLog("Volumes used by container: " + w.currentContainer.Names[0])
+		w.containerLogs.AppendLogf("Volumes used by container: " + w.currentContainer.Names[0])
 		for k, v := range w.currentContainer.Mounts {
 			vol, err := cli.VolumeInspect(v.Name)
 			if err != nil {
 				log.Println("inspect volume info failed")
 			}
-			w.containerLogs.AppendLog(fmt.Sprintf("Volume%d type: %s name:%s des:%s src:%s \n", k, v.Type, v.Name[:min(8, len(v.Name))], v.Destination, v.Source))
-			w.containerLogs.AppendLog(fmt.Sprintf("Volume%d driver: %s scope:%s mount point:%s \n", k, vol.Driver, vol.Scope, vol.Mountpoint))
+			w.containerLogs.AppendLogf("Volume%d type: %s name:%s des:%s src:%s \n", k, v.Type, v.Name[:min(8, len(v.Name))], v.Destination, v.Source)
+			w.containerLogs.AppendLogf("Volume%d driver: %s scope:%s mount point:%s \n", k, vol.Driver, vol.Scope, vol.Mountpoint)
 		}
 		w.m.Unlock()
 		// TODO:需要补充加载绑定容器ID的bpf程序的功能(disk IO)
@@ -186,13 +186,13 @@ func (w *ContainersSelect) chooseIsolationInfo(b bool) {
 		}
 		if stat.State.Pid == 0 {
 			w.m.Unlock()
-			w.containerLogs.AppendLog("container not start")
+			w.containerLogs.AppendLogf("container not start")
 			return
 		}
 		pid := stat.State.Pid
-		w.containerLogs.AppendLog(fmt.Sprintf("container's pid is %d", pid))
+		w.containerLogs.AppendLogf("container's pid is %d", pid)
 		nsPath := fmt.Sprintf("/proc/%d/ns", pid)
-		w.containerLogs.AppendLog(fmt.Sprintf("reading namespaces info: %s ", nsPath))
+		w.containerLogs.AppendLogf("reading namespaces info: %s ", nsPath)
 		// 读取 /proc/{pid}/ns 目录内容
 		files, err := os.ReadDir(nsPath)
 		if err != nil {
@@ -203,10 +203,10 @@ func (w *ContainersSelect) chooseIsolationInfo(b bool) {
 			if err != nil {
 				return
 			}
-			w.containerLogs.AppendLog(fmt.Sprintf("%s\n", lk))
+			w.containerLogs.AppendLogf("%s\n", lk)
 		}
 		statusPath := fmt.Sprintf("/proc/%d/status", stat.State.Pid)
-		w.containerLogs.AppendLog(fmt.Sprintf("reading pid status: %s ", statusPath))
+		w.containerLogs.AppendLogf("reading pid status: %s ", statusPath)
 		data, err := os.ReadFile(statusPath)
 		if err != nil {
 			return
@@ -214,23 +214,23 @@ func (w *ContainersSelect) chooseIsolationInfo(b bool) {
 		lines := strings.Split(string(data), "\n")
 		for _, line := range lines {
 			if strings.HasPrefix(line, "PPid") {
-				w.containerLogs.AppendLog(line)
+				w.containerLogs.AppendLogf(line)
 			}
 			if strings.HasPrefix(line, "NSpid") {
-				w.containerLogs.AppendLog(line)
+				w.containerLogs.AppendLogf(line)
 			}
 			if strings.HasPrefix(line, "Seccomp") {
-				w.containerLogs.AppendLog(line)
+				w.containerLogs.AppendLogf(line)
 			}
 		}
 		cgroupPath := fmt.Sprintf("/proc/%d/cgroup", stat.State.Pid)
-		w.containerLogs.AppendLog(fmt.Sprintf("reading cgroup file: %s ", cgroupPath))
+		w.containerLogs.AppendLogf("reading cgroup file: %s ", cgroupPath)
 		// 读取 /proc/{pid}/cgroup 文件
 		data, err = os.ReadFile(cgroupPath)
 		if err != nil {
 			return
 		}
-		w.containerLogs.AppendLog(string(data))
+		w.containerLogs.AppendLogf(string(data))
 		w.m.Unlock()
 	} else {
 
@@ -244,14 +244,14 @@ func (w *ContainersSelect) chooseNetInfo(b bool) {
 	}
 	if b {
 		w.m.Lock()
-		w.containerLogs.AppendLog("Networks used by container:")
+		w.containerLogs.AppendLogf("Networks used by container:")
 		for networkName, network := range w.currentContainer.NetworkSettings.Networks {
 			netInspect, err := cli.NetWorkInspect(network.NetworkID)
 			if err != nil {
 				log.Println("inspect network info failed")
 			}
-			w.containerLogs.AppendLog(fmt.Sprintf("Network:%s,gateway:%s, IP Address:%s MacAddress:%s\n", networkName, network.Gateway, network.IPAddress, network.MacAddress))
-			w.containerLogs.AppendLog(fmt.Sprintf("Network driver: %s, scope: %s id:%s\n", netInspect.Driver, netInspect.Scope, netInspect.ID))
+			w.containerLogs.AppendLogf("Network:%s,gateway:%s, IP Address:%s MacAddress:%s\n", networkName, network.Gateway, network.IPAddress, network.MacAddress)
+			w.containerLogs.AppendLogf("Network driver: %s, scope: %s id:%s\n", netInspect.Driver, netInspect.Scope, netInspect.ID)
 		}
 		w.m.Unlock()
 	} else {
@@ -272,7 +272,7 @@ func (w *ContainersSelect) chooseProcess(b bool) {
 			return
 		}
 		if stat.State.Pid == 0 {
-			w.containerLogs.AppendLog("container init failed")
+			w.containerLogs.AppendLogf("container init failed")
 			w.m.Unlock()
 			return
 		}
@@ -291,10 +291,10 @@ func (w *ContainersSelect) chooseProcess(b bool) {
 			for e := range out {
 				comm := helper.Bytes2String(e.Comm[:])
 				if e.ExitEvent {
-					w.bpfLogs.AppendLog(fmt.Sprintf("exit duration_ns:%v,prio:%d, pid: %d, comm: %s\n", e.Ts-mp[comm], e.Prio, e.Pid, comm))
+					w.bpfLogs.AppendLogf("exit duration_ns:%v,prio:%d, pid: %d, comm: %s\n", e.Ts-mp[comm], e.Prio, e.Pid, comm)
 				} else {
 					mp[comm] = e.Ts
-					w.bpfLogs.AppendLog(fmt.Sprintf("exec pid: %d, comm: %s\n", e.Pid, comm))
+					w.bpfLogs.AppendLogf("exec pid: %d, comm: %s\n", e.Pid, comm)
 				}
 			}
 		}()
@@ -318,7 +318,7 @@ func (w *ContainersSelect) chooseCpu(b bool) {
 			log.Println("Error getting container stats: %v", err)
 		}
 		str := fmt.Sprintf("totalUseTime:%fs,in kern:%fs,in user:%fs", (float64)(statsJSON.CPUStats.CPUUsage.TotalUsage)/1e9, (float64)(statsJSON.CPUStats.CPUUsage.UsageInKernelmode)/1e9, (float64)(statsJSON.CPUStats.CPUUsage.UsageInUsermode)/1e9)
-		w.containerLogs.AppendLog(str)
+		w.containerLogs.AppendLogf(str)
 		w.m.Unlock()
 	} else {
 
@@ -335,7 +335,7 @@ func (w *ContainersSelect) chooseMemory(b bool) {
 			log.Println("Error getting container stats: %v", err)
 		}
 		str := fmt.Sprintf("memory used:%fMB", float64(statsJSON.MemoryStats.Usage)/1024/1024)
-		w.containerLogs.AppendLog(str)
+		w.containerLogs.AppendLogf(str)
 		w.m.Unlock()
 	} else {
 
@@ -346,24 +346,6 @@ func (w *ContainersSelect) checkBeforeChoose() bool {
 		return false
 	}
 	return true
-}
-func (w *ContainersSelect) AppendLogInLock(logs *widget.TextGrid, text string) {
-	//file, err := os.OpenFile("tmplog.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return
-	//}
-	//writer := bufio.NewWriter(file)
-	//defer writer.Flush()
-	//_, err = writer.WriteString(text)
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return
-	//}
-	logs.SetRow(len(logs.Rows), widget.NewTextGridFromString(text).Row(0))
-	if len(logs.Rows) > 200 {
-		logs.SetText("")
-	}
 }
 
 // input the type of namespace and get the peers in the same namespace
@@ -386,9 +368,7 @@ func (w *ContainersSelect) getNsPeers(ctx context.Context, pid int, nsType strin
 	default:
 		for _, v := range strings.Split(string(output), "\n") {
 			// Process each line of output
-			w.bpfLogs.AppendLog(v)
-			fmt.Println("nswatchPID: ", v)
-			// Check for scanning errors
+			w.bpfLogs.AppendLogf(v)
 		}
 	}
 }
@@ -401,9 +381,9 @@ func (w *ContainersSelect) getNsPeersV(ctx context.Context, pid int, nsType stri
 		log.Fatalf("Failed to get Namespace ID for PID %d and type %s: %v", pid, nsType, err)
 	}
 
-	w.bpfLogs.AppendLog("Monitoring peers in the same namespace ")
-	w.bpfLogs.AppendLog(fmt.Sprintf("Namespace Type: %s, Namespace ID: %s", nsType, nsID))
-	w.bpfLogs.AppendLog("PID     PPID   USER     COMMAND")
+	w.bpfLogs.AppendLogf("Monitoring peers in the same namespace ")
+	w.bpfLogs.AppendLogf("Namespace Type: %s, Namespace ID: %s", nsType, nsID)
+	w.bpfLogs.AppendLogf("PID     PPID   USER     COMMAND")
 	// 使用 map 记录已发现的进程
 	discoveredPeers := make(map[int]struct{})
 	// 实时监控
@@ -425,7 +405,7 @@ func (w *ContainersSelect) getNsPeersV(ctx context.Context, pid int, nsType stri
 			for _, peer := range currentPeers {
 				info, err := cli.GetProcessInfo(peer)
 				if err == nil {
-					w.bpfLogs.AppendLog(info)
+					w.bpfLogs.AppendLogf(info)
 				}
 			}
 		}

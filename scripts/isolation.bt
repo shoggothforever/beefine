@@ -7,21 +7,30 @@
 //    int * child_tidptr
 //    unsigned long tls
 tracepoint:syscalls:sys_enter_clone
-{ printf("clone called: pid=%d comm=%s flags=%x parent=%d,child=%d\n"
+{ printf("[clone] pid=%d comm=%s flags=%x parent=%d,child=%d\n"
 ,pid,comm, args->clone_flags,*args->parent_tidptr,*args->child_tidptr); }
 
 // bpftrace -lv tracepoint:syscalls:sys_enter_unshare
 //    int __syscall_nr
 //    unsigned long unshare_flags
 tracepoint:syscalls:sys_enter_unshare
-{ printf("unshare called: flags=%x\n", args->unshare_flags); }
+{ printf("[unshare] flags=%x\n", args->unshare_flags); }
 
 // bpftrace -lv tracepoint:syscalls:sys_enter_setns
 //    int __syscall_nr
 //    int fd
 //    int flags
 tracepoint:syscalls:sys_enter_setns
-{ printf("setns called: fd=%d, nstype=%x\n", args->fd, args->flags); }
+{ printf("[setns] fd=%d, nstype=%x\n", args->fd, args->flags); }
+
+tracepoint:syscalls:sys_enter_seccomp
+/*
+    int __syscall_nr
+    unsigned int op
+    unsigned int flags
+    void * uargs
+*/
+{ printf("[seccomp] op=%d, flags=%x\n", args->op, args->flags); }
 
 // bpftrace -lv tracepoint:syscalls:sys_enter_prctl
 //    int __syscall_nr
@@ -32,13 +41,22 @@ tracepoint:syscalls:sys_enter_setns
 //    unsigned long arg5
 tracepoint:syscalls:sys_enter_prctl {
 $opt=args->option;
-printf("prctl called: pid=%d comm=%s option=%d\n",pid,comm,$opt);
+printf("[prctl]comm=%s option=%d\n",comm,$opt);
 }
 
-// bpftrace -lv kprobe:cgroup_attach_task
-kprobe:cgroup_attach_task { printf("cgroup_attach_task: pid=%d,comm=%s, cgroup_path=%s\n", pid,comm,str(arg1)); }
-
-
-kprobe:cgroup_create { printf("cgroup_create:pid=%d,comm=%s, cgroup_path=%s\n",pid,comm, str(arg1)); }
+// bpftrace -lv tracepoint:cgroup:cgroup_attach_task
+/*
+tracepoint:cgroup:cgroup_attach_task
+    int dst_root
+    int dst_level
+    u64 dst_id
+    int pid
+    __data_loc char[] dst_path
+    __data_loc char[] comm
+*/
+tracepoint:cgroup:cgroup_attach_task
+{ printf("[cgroup_attach_task] pid=%d,comm=%s, cgroup_path=%s\n", pid,comm,str(args->dst_path)); }
+kprobe:cgroup_create
+{ printf("[cgroup_create]pid=%d,comm=%s",pid,comm); }
 
 

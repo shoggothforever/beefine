@@ -1,6 +1,7 @@
 package component
 
 import (
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -19,9 +20,10 @@ func (l *LogBoard) CreateRenderer() fyne.WidgetRenderer {
 	// 将 Select 包装为渲染器的一部分
 	return widget.NewSimpleRenderer(l.scroll)
 }
-func (l *LogBoard) AppendLog(text string) {
+func (l *LogBoard) AppendLogf(format string, args ...any) {
 	l.m.Lock()
 	defer l.m.Unlock()
+	text := fmt.Sprintf(format, args...)
 	l.logs.SetRow(len(l.logs.Rows), widget.NewTextGridFromString(text).Row(0))
 	if len(l.logs.Rows) > 200 {
 		l.logs.SetText("")

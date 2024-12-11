@@ -40,7 +40,8 @@ tracepoint:syscalls:sys_enter_listen
 tracepoint:syscalls:sys_enter_accept
 /comm!="vmtoolsd" && comm!="sudo"/
 {
-
+    printf("[connect] pid=%d comm=%s sockfd=%d\n",
+        pid, comm, args->fd);
 }
 
 // bpftrace -lv tracepoint:syscalls:sys_enter_connect

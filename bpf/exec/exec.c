@@ -54,7 +54,6 @@ int handle_exec(struct trace_event_raw_sched_process_exec *ctx)
 	e = bpf_ringbuf_reserve(&rb, sizeof(*e), 0);
 	if (!e)
 		return 0;
-
 	e->exit_event = false;
 	e->pid = pid;
 	ts = bpf_ktime_get_ns();

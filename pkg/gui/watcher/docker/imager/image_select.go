@@ -8,22 +8,23 @@ import (
 	"fyne.io/fyne/v2/widget"
 	imaget "github.com/docker/docker/api/types/image"
 	"log"
-	"os"
 	"os/exec"
 	exec2 "shoggothforever/beefine/bpf/exec"
 	"shoggothforever/beefine/bpf/image_prep"
 	"shoggothforever/beefine/bpf/mount"
 	"shoggothforever/beefine/internal/cli"
 	"shoggothforever/beefine/internal/helper"
+	"shoggothforever/beefine/pkg/component"
 	"sync"
+	"time"
 )
 
 // MyCustomWidget 是自定义控件，包装了 Select 并添加了额外的字段
 type ImageSelect struct {
 	widget.BaseWidget                // 嵌入 BaseWidget
 	base              *widget.Select // 内嵌 Select
-	imageLogs         *widget.TextGrid
-	bpfLogs           *widget.TextGrid
+	imageLogs         *component.LogBoard
+	bpfLogs           *component.LogBoard
 	cancelMap         map[string]func()
 	images            []imaget.Summary
 	currentImageIndex int
@@ -68,23 +69,18 @@ func (w *ImageSelect) CreateRenderer() fyne.WidgetRenderer {
 
 func (w *ImageSelect) chooseUnionFS(b bool) {
 	if b == true {
-		fmt.Println("choose watch unionfs")
+		w.bpfLogs.AppendLogf("choose watch unionfs")
 		req := image_prep.ImagePrepReq{}
 		out, cancel := image_prep.Start(&req)
 		w.cancelMap["chooseUnionFS"] = cancel
 		go func() {
 			for event := range out {
-				//time.Sleep(time.Second)
 				comm := helper.Bytes2String(event.Comm[:])
-				w.m.Lock()
-				str := fmt.Sprintf("pid:%d,comm:%s,operation:%s", event.Pid, comm, helper.Bytes2String(event.Operation[:]))
-				fmt.Println(str)
-				w.AppendLogInLock(w.bpfLogs, str)
-				w.m.Unlock()
+				w.bpfLogs.AppendLogf("pid:%d,comm:%s,operation:%s", event.Pid, comm, helper.Bytes2String(event.Operation[:]))
 			}
 		}()
 	} else {
-		fmt.Println("cancel watch unionfs")
+		w.bpfLogs.AppendLogf("cancel watch unionfs")
 		if w.cancelMap["chooseUnionFS"] != nil {
 			w.cancelMap["chooseUnionFS"]()
 		}
@@ -95,24 +91,24 @@ func (w *ImageSelect) chooseUnionFS(b bool) {
 
 func (w *ImageSelect) chooseMount(b bool) {
 	if b == true {
-		fmt.Println("choose watch mount")
+		w.bpfLogs.AppendLogf("choose watch mount")
 		req := mount.MountReq{}
 		out, cancel := mount.Start(&req)
 		w.cancelMap["chooseMount"] = cancel
 		go func() {
 			for event := range out {
 				w.m.Lock()
-				str := fmt.Sprintf("PID: %d, dev_name: %s, dir_name: %s, type: %s\n",
+				str := fmt.Sprintf("[mount] pid: %d, dev_name: %s, dir_name: %s, type: %s\n",
 					event.Pid,
 					helper.Bytes2String(event.DevName[:]),
 					helper.Bytes2String(event.DirName[:]),
 					helper.Bytes2String(event.Type[:]))
-				w.AppendLogInLock(w.bpfLogs, str)
+				w.bpfLogs.AppendLogf(str)
 				w.m.Unlock()
 			}
 		}()
 	} else {
-		fmt.Println("cancel watch mount")
+		w.bpfLogs.AppendLogf("cancel watch mount")
 		if w.cancelMap["chooseMount"] != nil {
 			w.cancelMap["chooseMount"]()
 		}
@@ -123,12 +119,12 @@ func (w *ImageSelect) chooseMount(b bool) {
 
 func (w *ImageSelect) chooseNetwork(b bool) {
 	if b == true {
-		fmt.Println("choose watch network")
+		w.bpfLogs.AppendLogf("choose watch network")
 		ctx, cancel := context.WithCancel(context.TODO())
 		w.cancelMap["chooseNetwork"] = cancel
 		go w.runBPFTraceScript(ctx, netTracePointScript)
 	} else {
-		fmt.Println("cancel watch network")
+		w.bpfLogs.AppendLogf("cancel watch network")
 		if w.cancelMap["chooseNetwork"] != nil {
 			w.cancelMap["chooseNetwork"]()
 		}
@@ -138,14 +134,15 @@ func (w *ImageSelect) chooseNetwork(b bool) {
 
 func (w *ImageSelect) chooseIsolation(b bool) {
 	if b == true {
-		fmt.Println("choose watch namespace and cgroup")
+		w.bpfLogs.AppendLogf("choose watch namespace and cgroup")
 		ctx, cancel := context.WithCancel(context.TODO())
 		w.cancelMap["chooseIsolation"] = cancel
 		go w.runBPFTraceScript(ctx, isolationTracePointScript)
 	} else {
-		fmt.Println("cancel watch namespace and cgroup")
+		w.bpfLogs.AppendLogf("cancel watch namespace and cgroup")
 		if w.cancelMap["chooseIsolation"] != nil {
 			w.cancelMap["chooseIsolation"]()
+			w.bpfLogs.AppendLogf("cancel watch isolation")
 		}
 
 	}
@@ -153,49 +150,27 @@ func (w *ImageSelect) chooseIsolation(b bool) {
 
 func (w *ImageSelect) chooseProcess(b bool) {
 	if b == true {
-		fmt.Println("choose watch process")
+		w.bpfLogs.AppendLogf("choose watch process")
 		req := &exec2.ExecReq{}
 		out, cancel := exec2.Start(req)
 		w.cancelMap["chooseProcess"] = cancel
 		go func() {
 			mp := make(map[string]uint64)
 			for e := range out {
-				w.m.Lock()
 				comm := helper.Bytes2String(e.Comm[:])
 				if e.ExitEvent {
-					w.AppendLogInLock(w.bpfLogs, fmt.Sprintf("exit duration_ns:%v,prio:%d, pid: %d, comm: %s\n", e.Ts-mp[comm], e.Prio, e.Pid, comm))
+					w.bpfLogs.AppendLogf("exit duration_ns:%v,prio:%d, pid: %d, comm: %s\n", e.Ts-mp[comm], e.Prio, e.Pid, comm)
 				} else {
 					mp[comm] = e.Ts
-					w.AppendLogInLock(w.bpfLogs, fmt.Sprintf("exec pid: %d, comm: %s\n", e.Pid, comm))
+					w.bpfLogs.AppendLogf("exec pid: %d, comm: %s\n", e.Pid, comm)
 				}
-				w.m.Unlock()
 			}
 		}()
 	} else {
-		fmt.Println("cancel watch process")
+		w.bpfLogs.AppendLogf("cancel watch process")
 		if w.cancelMap["chooseProcess"] != nil {
 			w.cancelMap["chooseProcess"]()
 		}
-	}
-}
-
-func (w *ImageSelect) AppendLogInLock(logs *widget.TextGrid, text string) {
-	// 将日志写入到本地，可以与其它框架结合起来使用
-	file, err := os.OpenFile("tmplog.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	writer := bufio.NewWriter(file)
-	defer writer.Flush()
-	_, err = writer.WriteString(text)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	logs.SetRow(len(logs.Rows), widget.NewTextGridFromString(text).Row(0))
-	if len(logs.Rows) > 500 {
-		logs.SetText("")
 	}
 }
 
@@ -218,7 +193,6 @@ func (w *ImageSelect) OnChanged(s string) {
 	for k, v := range w.images {
 		if len(v.RepoTags) > 0 && v.RepoTags[0] == s {
 			w.currentImageIndex = k
-			fmt.Println("select image ", w.images[k])
 			break
 		}
 	}
@@ -230,7 +204,6 @@ func (w *ImageSelect) runBPFTraceScript(ctx context.Context, scriptPath string) 
 	cmd := exec.Command("bpftrace", scriptPath)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
 	// Start the command asynchronously
@@ -245,7 +218,8 @@ func (w *ImageSelect) runBPFTraceScript(ctx context.Context, scriptPath string) 
 	}()
 	// Start a goroutine to process the output asynchronously
 	scanner := bufio.NewScanner(stdout)
-	mp := make(map[string]struct{})
+	mp := make(map[string]int)
+	t := time.Now()
 	for {
 		select {
 		case <-done:
@@ -254,18 +228,19 @@ func (w *ImageSelect) runBPFTraceScript(ctx context.Context, scriptPath string) 
 			if err := cmd.Process.Kill(); err != nil {
 				fmt.Printf("failed to kill process: %v", err)
 			}
+			for text, cnt := range mp {
+				w.bpfLogs.AppendLogf("%s catch count %d during %d ms \n", text, cnt, time.Now().Sub(t)/1000/1000)
+			}
 			return
 		default:
 			scanner.Scan()
-			// Process each line of output
-			w.m.Lock()
 			if _, ok := mp[scanner.Text()]; !ok {
-				mp[scanner.Text()] = struct{}{}
-				w.AppendLogInLock(w.bpfLogs, scanner.Text())
+				mp[scanner.Text()] = 1
+				w.bpfLogs.AppendLogf(scanner.Text())
 				fmt.Println("bpftrace output:", scanner.Text())
+			} else {
+				mp[scanner.Text()]++
 			}
-			w.m.Unlock()
-			// Check for scanning errors
 			if err := scanner.Err(); err != nil {
 				log.Printf("Error reading bpftrace output: %v", err)
 			}
