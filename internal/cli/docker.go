@@ -26,13 +26,14 @@ const (
 
 // DockerRunConfig 定义 docker run 的 JSON 配置结构
 type DockerRunConfig struct {
-	Image   string   `json:"image"`             // 镜像名称
-	Name    string   `json:"name,omitempty"`    // 容器名称
-	Ports   []string `json:"ports,omitempty"`   // 端口映射
-	Volumes []string `json:"volumes,omitempty"` // 挂载卷
-	Env     []string `json:"env,omitempty"`     // 环境变量
-	Detach  bool     `json:"detach,omitempty"`  // 后台运行
-	Remove  bool     `json:"rm,omitempty"`      // 自动删除容器
+	Image      string   `json:"image"`                // 镜像名称
+	Name       string   `json:"name,omitempty"`       // 容器名称
+	Ports      []string `json:"ports,omitempty"`      // 端口映射
+	Volumes    []string `json:"volumes,omitempty"`    // 挂载卷
+	Env        []string `json:"env,omitempty"`        // 环境变量
+	Detach     bool     `json:"detach,omitempty"`     // 后台运行
+	Remove     bool     `json:"rm,omitempty"`         // 自动删除容器
+	Privileged bool     `json:"privileged,omitempty"` // 特权启动
 }
 
 // initDockerClient 初始化 Docker 客户端
@@ -106,7 +107,8 @@ func ExecDockerCmd(input string) (string, error) {
     "volumes": ["/host/path:/container/path"],
     "env": ["ENV_VAR1=value1", "ENV_VAR2=value2"],
     "detach": true,
-    "rm": true
+    "rm": true,
+	"privileged": false
 }`
 */
 func ParseAndRunDockerRun(jsonConfig string, image string) (string, error) {
@@ -129,6 +131,9 @@ func ParseAndRunDockerRun(jsonConfig string, image string) (string, error) {
 	}
 	if config.Remove {
 		cmdArgs = append(cmdArgs, "--rm")
+	}
+	if config.Privileged {
+		cmdArgs = append(cmdArgs, "--privileged")
 	}
 	for _, port := range config.Ports {
 		cmdArgs = append(cmdArgs, "-p", port)

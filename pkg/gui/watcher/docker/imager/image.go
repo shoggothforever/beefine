@@ -76,10 +76,10 @@ func NewToolBar(ImageLogs *component.LogBoard, bpfLogs *component.LogBoard) *fyn
 		//result, err := cli.ExecDockerCmd(input)
 		if err != nil {
 			// 显示错误信息
-			ImageLogs.AppendLogf("Error: %v\n%s", err, result)
+			ImageLogs.AppendLogf("Error: %v %s \n", err, result)
 		} else {
 			// 显示成功信息
-			ImageLogs.AppendLogf("Success:\n%s", result)
+			ImageLogs.AppendLogf("Success:%s \n", result)
 		}
 	}
 	jsonEditor.OnSubmitted = func(s string) {

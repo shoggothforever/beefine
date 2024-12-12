@@ -25,9 +25,9 @@ func Screen(_ fyne.Window) fyne.CanvasObject {
 	logo := canvas.NewImageFromFile("internal/data/assets/logo.png")
 	logo.FillMode = canvas.ImageFillContain
 	if fyne.CurrentDevice().IsMobile() {
-		logo.SetMinSize(fyne.NewSize(192, 192))
+		logo.SetMinSize(fyne.NewSize(384, 384))
 	} else {
-		logo.SetMinSize(fyne.NewSize(256, 256))
+		logo.SetMinSize(fyne.NewSize(512, 512))
 	}
 
 	footer := container.NewHBox(

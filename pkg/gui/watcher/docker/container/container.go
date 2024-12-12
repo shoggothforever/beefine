@@ -42,7 +42,7 @@ func Screen(w fyne.Window) fyne.CanvasObject {
 }
 
 func buildTag(name string, c *types.Container) string {
-	return name + " " + c.ID + " " + c.Image
+	return name + " " + c.ID[:min(len(c.ID), 16)] + " " + c.Image[:min(len(c.Image), 16)]
 }
 func parseTagName(tag string) string {
 	ss := strings.Split(tag, " ")

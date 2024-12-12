@@ -95,7 +95,11 @@ func (w *ContainersSelect) OnChanged(s string) {
 	w.base.SetOptions(containertags)
 	if v, ok := w.containers[s]; ok {
 		w.currentContainer = v
-		fmt.Println("update currentContainer ", v.ID)
+		status, err := cli.ContainerInspect(w.currentContainer.ID)
+		if err != nil {
+			return
+		}
+		v.Status = status.State.Status
 		if cli.CheckContainerRunningState(v.Status) {
 			w.containerButton.SetText("stop container")
 			w.containerLogs.AppendLogf("container %s is running", v.ID[:16])
