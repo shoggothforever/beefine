@@ -9,7 +9,7 @@ import (
 
 const hintStr = "eBPF helpers supported for program type"
 
-func ListProbes() map[string][]string {
+func ListHelperFunc() map[string][]string {
 	// 执行 `bpftool feature probe` 命令
 	cmd := exec.Command("bpftool", "feature", "probe")
 	output, err := cmd.Output()
@@ -21,14 +21,6 @@ func ListProbes() map[string][]string {
 	// 解析输出
 	helperMap := extractHelpers(string(output))
 
-	// 打印结果
-	//fmt.Println("eBPF Helpers by Program Type:")
-	//for progType, helpers := range helperMap {
-	//	fmt.Printf("%s:\n", progType)
-	//	for _, helper := range helpers {
-	//		fmt.Printf("  - %s\n", helper)
-	//	}
-	//}
 	return helperMap
 }
 

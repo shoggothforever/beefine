@@ -83,19 +83,6 @@ func GetDockerClient() (*client.Client, error) {
 	}
 	return cliInstance, err
 }
-func ExecDockerCmd(input string) (string, error) {
-	args := strings.Split(input, " ")
-	if len(args) < 2 {
-		return "", nil
-	}
-	cmd := exec.Command(args[0], args[1:]...)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return string(output), fmt.Errorf("failed to execute docker run: %w", err)
-	}
-	fmt.Println(string(output))
-	return string(output), nil
-}
 
 // ParseAndRunDockerRun 解析 JSON 并运行 docker 命令
 /*
@@ -233,10 +220,12 @@ func ChangeContainerState(id string, oldState bool) error {
 }
 
 type DashBoardData struct {
-	CpuUsage     float64
-	MemUsage     float64
-	ContainerLen int
-	ImagesLen    int
+	CpuUsage         float64
+	MemUsage         float64
+	ContainerLen     int
+	RunningContainer int
+	OtherContainer   int
+	ImagesLen        int
 }
 
 func GetContainerStatJson(id string) (container.StatsResponse, error) {
@@ -278,4 +267,11 @@ func GetDockerDashBoardData() (*DashBoardData, error) {
 		}
 	}
 	return &data, nil
+}
+func GetDockerNetworkDetails() (string, error) {
+	return "Network 1: bridge\nNetwork 2: host\nNetwork 3: none", nil
+}
+
+func GetDockerVolumeDetails() (string, error) {
+	return "Volume 1: my_data (20MB)\nVolume 2: backup (100MB)", nil
 }

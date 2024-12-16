@@ -23,7 +23,7 @@ type Watcher struct {
 
 var Watchers = map[string]Watcher{
 	"welcome":   {"welcome", "Welcome to the beefine observer", welcome.Screen},
-	"BPF":       {"BPF", "Observe system-level activities", bpf.Screen},
+	"BPF":       {"Load eBPF", "Observe system-level activities", bpf.Screen},
 	"Docker":    {"Docker", "Monitor Docker activities", docker.Screen},
 	"imager":    {"Image Monitoring", "Monitor Docker imager creation process", imager.Screen},
 	"container": {"Container Monitoring", "Monitor running container performance", container2.Screen},
@@ -77,7 +77,7 @@ func CreateWatcher() fyne.CanvasObject {
 	title := widget.NewLabel("Component name")
 	intro := widget.NewLabel("An introduction would probably go\nhere, as well as a")
 	intro.Wrapping = fyne.TextWrapWord
-	w := a.NewWindow("beefine")
+	//w := a.NewWindow("beefineInner")
 	setWatcher := func(t Watcher) {
 		title.SetText(t.Title)
 		intro.SetText(t.Intro)
@@ -85,7 +85,7 @@ func CreateWatcher() fyne.CanvasObject {
 		intro.Hide()
 		if t.View != nil {
 			if _, ok := viewsSet[t.Title]; !ok {
-				viewsSet[t.Title] = []fyne.CanvasObject{t.View(w)}
+				viewsSet[t.Title] = []fyne.CanvasObject{t.View(TopWindow)}
 			}
 			content.Objects = viewsSet[t.Title]
 		}
@@ -105,12 +105,14 @@ func CreateWatcher() fyne.CanvasObject {
 	return split
 }
 
+var TopWindow fyne.Window
+
 func WatcherStart() {
 	a := app.NewWithID("io.watcher.beefine")
 	a.SetIcon(fyne.NewStaticResource("icon", assets.LogoIcon))
-	w := a.NewWindow("beefine")
+	TopWindow = a.NewWindow("beefine")
 	// 初始化窗口内容
-	w.SetContent(CreateWatcher())
-	w.Resize(fyne.NewSize(1600, 800))
-	w.ShowAndRun()
+	TopWindow.SetContent(CreateWatcher())
+	TopWindow.Resize(fyne.NewSize(1600, 800))
+	TopWindow.ShowAndRun()
 }

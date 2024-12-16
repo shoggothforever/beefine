@@ -5,13 +5,12 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"image/color"
 	"net"
 	"shoggothforever/beefine/bpf/counter"
 	"shoggothforever/beefine/pkg/component"
 )
 
-const CounterUIName = "countNetPackage"
+const CounterUIName = "inspect network"
 
 func CounterUI() fyne.CanvasObject {
 	// 显示状态
@@ -29,7 +28,7 @@ func CounterUI() fyne.CanvasObject {
 	for _, iface := range interfaces {
 		options = append(options, iface.Name)
 	}
-
+	log := component.NewLogBoard("catch network info through xdp", 200, 400)
 	// 创建 Select 控件
 	selectIface := widget.NewSelect(options, nil)
 	selectIface.PlaceHolder = "Select a network interface"
@@ -40,9 +39,6 @@ func CounterUI() fyne.CanvasObject {
 	// 计数标签
 	cntLabel := widget.NewLabel("Counter")
 	cntLabel.SetText("waiting to count")
-	// 创建实时折线图
-	liveChart := component.NewLiveChart(50, color.RGBA{R: 255, G: 100, B: 100, A: 255})
-
 	var cancelFunc func()
 	var lastSelect string
 	selectIface.OnChanged = func(s string) {
@@ -61,7 +57,8 @@ func CounterUI() fyne.CanvasObject {
 		go func() {
 			for v := range out {
 				cntLabel.SetText(fmt.Sprintf("Received %d packets", v.Count))
-				liveChart.AppendData(float64(v.Count))
+				log.AppendLogf("Src IP: %s, Dst IP: %s, Src Port: %d, Dst Port: %d, Protocol: %s\n",
+					v.SrcIp, v.DstIp, v.SrcPort, v.DstPort, v.Protocol)
 			}
 			stopButton.Disable()
 		}()
@@ -72,6 +69,7 @@ func CounterUI() fyne.CanvasObject {
 			statusLabel.SetText("Status: Idle")
 			stopButton.Disable()
 			cntLabel.SetText("waiting to count")
+			log.Clear()
 		}
 	}
 	// 停止按钮事件
@@ -82,12 +80,13 @@ func CounterUI() fyne.CanvasObject {
 		PKGName,
 		CounterUIName,
 		stop,
-		widget.NewLabel("click to check how many net package have been received"),
+		widget.NewLabel("using xdp to catch network package information"),
+		widget.NewLabel("select network iface to attach xdp program"),
 		selectIface,
 		statusLabel,
 		container.NewHBox(stopButton),
 		widget.NewLabel("Real-Time Packet Counter:"),
 		cntLabel,
-		liveChart,
+		log,
 	)
 }

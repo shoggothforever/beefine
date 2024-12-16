@@ -9,7 +9,6 @@ import (
 	imaget "github.com/docker/docker/api/types/image"
 	"log"
 	"os/exec"
-	exec2 "shoggothforever/beefine/bpf/exec"
 	"shoggothforever/beefine/bpf/image_prep"
 	"shoggothforever/beefine/bpf/mount"
 	"shoggothforever/beefine/internal/cli"
@@ -72,11 +71,23 @@ func (w *ImageSelect) chooseVFS(b bool) {
 		w.bpfLogs.AppendLogf("choose watch unionfs")
 		req := image_prep.ImagePrepReq{}
 		out, cancel := image_prep.Start(&req)
+
 		w.cancelMap["chooseVFS"] = cancel
 		go func() {
+			mp := make(map[string]int)
+			st := time.Now()
 			for event := range out {
 				comm := helper.Bytes2String(event.Comm[:])
-				w.bpfLogs.AppendLogf("pid:%d,comm:%s,operation:%s", event.Pid, comm, helper.Bytes2String(event.Operation[:]))
+				str := fmt.Sprintf("pid:%d,comm:%s,operation:%s", event.Pid, comm, helper.Bytes2String(event.Operation[:]))
+				if _, ok := mp[str]; ok {
+					mp[str]++
+					continue
+				}
+				mp[str] = 1
+				w.bpfLogs.AppendLogf(str)
+			}
+			for log, count := range mp {
+				w.bpfLogs.AppendLogf("%s count:%d during %f s\n ", log, count, time.Since(st).Seconds())
 			}
 		}()
 	} else {
@@ -145,32 +156,6 @@ func (w *ImageSelect) chooseIsolation(b bool) {
 			w.bpfLogs.AppendLogf("cancel watch isolation")
 		}
 
-	}
-}
-
-func (w *ImageSelect) chooseProcess(b bool) {
-	if b == true {
-		w.bpfLogs.AppendLogf("choose watch process")
-		req := &exec2.ExecReq{}
-		out, cancel := exec2.Start(req)
-		w.cancelMap["chooseProcess"] = cancel
-		go func() {
-			mp := make(map[string]uint64)
-			for e := range out {
-				comm := helper.Bytes2String(e.Comm[:])
-				if e.ExitEvent {
-					w.bpfLogs.AppendLogf("exit duration_ns:%v,prio:%d, pid: %d, comm: %s\n", e.Ts-mp[comm], e.Prio, e.Pid, comm)
-				} else {
-					mp[comm] = e.Ts
-					w.bpfLogs.AppendLogf("exec pid: %d, comm: %s\n", e.Pid, comm)
-				}
-			}
-		}()
-	} else {
-		w.bpfLogs.AppendLogf("cancel watch process")
-		if w.cancelMap["chooseProcess"] != nil {
-			w.cancelMap["chooseProcess"]()
-		}
 	}
 }
 

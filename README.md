@@ -1,7 +1,7 @@
 # beefine: Visualizing Docker Internals with eBPF
+## 2024年全国大学生计算机系统能力大赛-操作系统赛（华东区域赛）-OS应用开发赛
 
 ## 项目简介
-
 **Beefine** 是一个基于 **Fyne** 和 **Cilium eBPF** 框架开发的工具，旨在通过图形化交互界面（GUI）实时观测 Docker 容器的创建过程，深入理解虚拟化技术的核心理念和实现原理。本项目同时支持加载和管理 eBPF 程序，帮助用户追踪操作系统在 Docker 操作中的行为，后续将扩展到 Kubernetes 集群的 Pod 监控。
 
 ---
@@ -28,21 +28,17 @@
 
 该项目目前专注于以下场景：
 
-1. **Docker 容器创建观测**：
-
+1. **Docker容器创建观测**：
     - 实时加载 eBPF 程序，捕获 Docker 使用镜像创建容器时的操作系统行为。
     - 包括镜像拉取、文件系统设置、命名空间管理、网络配置等。
-    - 为开发者提供实验环境，用于理解容器的实现原理，如 Namespace、Cgroup 和 UnionFS。
-2. **动态 eBPF 程序管理**：
-
+    - 为学习者和开发者提供实验环境，用于理解容器的实现原理，如Namespace、Cgroup 和 UnionFS。
+2. **Docker容器运行时**
+3. **动态 eBPF 程序管理**：
     - 提供直观界面加载和管理 eBPF 程序，动态分析系统行为。
-3. **图形化分析**：
-
+4. **图形化分析**：
     - 通过 GUI 展示分析结果，帮助用户直观理解容器的底层运行机制。
-4. **未来扩展**：
-
+5. **未来扩展**：
     - 为 Kubernetes 集群提供监控支持，观测 Pod 的创建、调度和运行。
-
 ---
 
 ## 项目进度
@@ -106,13 +102,17 @@
 
     - Docker 使用镜像创建容器的全过程：
         - [X] 镜像文件的拉取与解压。
-        - [ ] 文件系统的挂载（OverlayFS）。
-        - [ ] 容器隔离环境的设置（Namespace 和 Cgroup）。
+        - [X] 文件系统的挂载（OverlayFS）。
+        - [X] 容器隔离环境的设置（Namespace 和 Cgroup）。
 
 - Docker 容器运行中的性能观测
 
-    - [ ] 网络连接
-    -  [ ]
+    - [X] 隔离文件信息
+    - [X] 挂载磁盘信息
+    - [X] 网络信息
+    - [X] 进程信息
+    - [X] cpu信息
+    - [X] memory信息
 - 后续计划扩展到更多场景，包括：
 
     - [ ] 容器运行时的性能分析。
@@ -141,39 +141,35 @@
 在编译源码前，请确保系统已安装以下依赖：
 
 1. **安装 Go** 如果未安装 Go，可以通过以下命令安装：
-2. bash
-3. 复制代码
-4. `sudo apt update ``sudo apt install -y golang`
-5. 检查安装是否成功：
-6. `go version`
-7. 确保版本 >= 1.18。
-8. **安装 Docker** 如果未安装 Docker，可以参考以下命令安装：
-9. bash
-10. 复制代码
-11. `sudo apt update sudo apt install -y docker.io ``sudo systemctl enable --now docker`
-12. **确保管理员权限** eBPF 程序需要管理员权限，确保当前用户在 `sudo` 或 `root` 下运行。
+```bash
+sudo apt update 
+sudo apt install -y golang
+```
+2. 检查安装是否成功：确保版本 >= 1.18
+```bash 
+go version
+```
+**安装 Docker** 如果未安装 Docker，可以参考以下命令安装：
+```bash
+ sudo apt update sudo apt install -y docker.io ``sudo systemctl enable --now docker
+```
+**确保管理员权限** eBPF 程序需要管理员权限，确保当前用户在 `sudo` 或 `root` 下运行。
 
 ### 克隆项目源码
-
-`git clone ``https://github.com/shoggothforever/beefine.git`
-`cd beefine`
-
+```
+git clone https://github.com/shoggothforever/beefine.git
+cd beefine
+```
 ### 编译程序
+可选项：在源码bpf目录下添加自定义的bpf程序
+参考项目makefile直接编译源码：
+```make build```
 
-运行以下命令编译项目源码：
-
-`go build -o beefine`
-
-如果需要静态编译以避免依赖动态库，可以使用以下命令：
-
+如果没有改动bpf程序，可以使用以下命令：
 `go build -ldflags "-s -w" -o beefine`
-
 ### 运行程序
-
 编译成功后，执行以下命令运行：
-
 `sudo ./beefine`
-
 程序将启动图形化界面。
 
 ---
@@ -188,13 +184,10 @@
 
 以 Ubuntu 20.04 为例：
 
-bash
-
-复制代码
-
-`wget https://github.com/your-repo/beefine/releases/download/v1.0.0/beefine-linux-amd64 -O beefine`
-`chmod +x beefine`
-
+``` bash
+wget https://github.com/your-repo/beefine/releases/download/v1.0.0/beefine-linux-amd64 -O beefine
+chmod +x beefine
+```
 ### 安装依赖
 
 确保以下依赖已安装：
@@ -210,9 +203,7 @@ bash
 
 ---
 
-## 文件结构 `
-
-``<br>
+## 文件结构
 ├── bpf/                     # 主程序入口 <br>
 │   ├──*/                    # bpf2go与libbpf结合bpf程序 <br>
 │   └──vmlinux.h             # bpf 的 btf文件 ` `<br>
@@ -233,47 +224,49 @@ bash
 ├── makefile                 # 项目编译脚本 <br>
 ├── license                  # 证书文件 <br>
 └── README.md                # 项目文档 ` <br>
-
 ---
 
 ## 使用方法
 
 ### 1. 加载 eBPF 程序
+在 GUI 中选择 `Load eBPF` 功能，选择其中的一个bpf程序点击后会自动加载运行，然后会将观测到的数据返回到界面
+![img.png](internal/data/assets/doc/img.png)
+### 2. 观测 Docker 使用资源情况
+在 GUI 中选择 `Docker`，查看当前系统中的docker资源使用情况
+![img_1.png](internal/data/assets/doc/img_1.png)
 
-在 GUI 中选择 `Load eBPF Program` 功能，上传您的 eBPF 程序文件（如 ELF 格式），程序将自动加载并运行。
-
-### 2. 观测 Docker 操作
-
-在 GUI 中选择 `Observe Docker`，输入需要观测的 Docker 操作（如容器创建），实时查看捕获的系统行为和分析结果。
+### 3. 观测Docker 创建容器过程中行为
+   a. 拉取docker image\
+   b. 从系统中选择已有的docker image\
+   c. 勾选bpf观测选项\
+   d. 输入容器运行配置参数\
+   e. 运行容器，在右侧bpf日志面板查看具体的docker操作信息
+![img_3.png](internal/data/assets/doc/img_3.png)
+### 4. 观测docker container的实时数据
+   a. 选择系统中存在的 docker container\
+   b. 调整容器运行状态(running/waiting/exited)\
+   c. 勾选观测选项
+   - isolation:查看container的namespace和cgroup的信息
+   - diskInfo:查看container的挂载卷信息
+   - netInfo:查看container的网络信息以及加载bpf程序检测所处网络空间中的连接信息
+   - process:查看process的进程组信息，并且实时观测当前容器所处pid namespaces下的其它进程的信息
+![img_2.png](internal/data/assets/doc/img_2.png)
 
 ---
 
 ## 未来计划
 
 1. **Kubernetes 支持**：
-
     - 增加对 Kubernetes 集群中 Pod 创建过程的监控功能。
 2. **实时性能监控**：
-
     - 使用 eBPF 追踪资源使用（CPU、内存、网络流量等），分析容器性能。
 3. **数据可视化**：
-
     - 增加更多实时图表和分析报告，提升用户体验。
 4. **跨平台支持**：
-
     - 提供更多平台的支持，兼容 Windows 和 macOS。
-
 ---
 
-## 贡献指南
 
-欢迎对本项目感兴趣的开发者贡献代码！贡献步骤如下：
-
-1. Fork 本项目到您的 GitHub 账户。
-2. 提交 Pull Request 前，请确保所有功能通过测试。
-3. 在 Pull Request 中详细描述您的修改内容和目的。
-
----
 
 ## 开源协议
 

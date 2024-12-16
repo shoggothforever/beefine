@@ -18,12 +18,12 @@ import (
 const CgMapKey int32 = 0
 
 type ExecReq struct {
-	ContainerPid int32
+	ContainerPid uint32
 	rb           *ringbuf.Reader
 }
 type ExecRes struct {
-	Pid       int32
-	Prio      int32
+	Pid       uint32
+	Prio      uint32
 	Ts        uint64
 	Comm      [16]byte
 	ExitEvent bool
@@ -62,7 +62,6 @@ func Start(req *ExecReq) (chan ExecRes, func()) {
 				execStart.Close()
 				execExit.Close()
 				req.rb.Close()
-				// close attach
 				close(stopper)
 				time.Sleep(1 * time.Second)
 				close(out)
@@ -77,6 +76,7 @@ func Action(objs bpfObjects, req *ExecReq, stopper chan struct{}) chan ExecRes {
 	out := make(chan ExecRes)
 	go func() {
 		var e ExecRes
+		var event bpfEvent
 		err := objs.CgPidMap.Put(CgMapKey, req.ContainerPid)
 		if err != nil {
 			log.Printf("unable to set cgmap, cg_pid:%d\n ,%s", req.ContainerPid, err.Error())
@@ -93,13 +93,19 @@ func Action(objs bpfObjects, req *ExecReq, stopper chan struct{}) chan ExecRes {
 					log.Printf("reading ringbuf: %s\n", err)
 					return
 				}
-				if err = binary.Read(bytes.NewReader(record.RawSample), binary.LittleEndian, &e); err != nil {
+				if err = binary.Read(bytes.NewReader(record.RawSample), binary.LittleEndian, &event); err != nil {
 					log.Printf("reading record: %s\n", err)
 				}
 				if err != nil {
 					log.Printf("unable to lookup cgmap, cg_pid:%d,%s\n", req.ContainerPid, err.Error())
 				}
-				//log.Printf("catch pid is %d\n", pid)
+				e.ExitEvent = event.ExitEvent
+				e.Pid = event.Pid
+				e.Ts = event.Ts
+				e.Prio = event.Prio
+				for k, v := range event.Comm {
+					e.Comm[k] = byte(v)
+				}
 				out <- e
 			}
 		}

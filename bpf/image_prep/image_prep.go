@@ -9,6 +9,7 @@ import (
 	"log"
 	"shoggothforever/beefine/internal/helper"
 	"sync"
+	"time"
 )
 
 // remove -type event if you won't use diy struct in kernel
@@ -60,8 +61,9 @@ func Start(req *ImagePrepReq) (chan ImagePreRes, func()) {
 				oa.Close()
 				//oe.Close()
 				req.rb.Close()
-				close(out)
 				close(stopper)
+				time.Sleep(time.Second)
+				close(out)
 			})
 		}
 	}

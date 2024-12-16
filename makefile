@@ -16,7 +16,7 @@ gen:
 	@chmod +x $(GEN_SCRIPT) # 确保脚本有执行权限
 	@bash $(GEN_SCRIPT) $(PKG)
 
-.PHON: build run
+.PHON: build
 build:
 	@echo "Running main project ..."
 	@BPF2GO_FLAGS="-O2 -g -Wall -Werror -fbuiltin$(CFLAGS)" go generate  ./bpf/...

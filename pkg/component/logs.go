@@ -13,10 +13,11 @@ const MaxLogRow = 500
 
 type LogBoard struct {
 	widget.BaseWidget
-	entry  *widget.Entry
-	logs   *widget.TextGrid
-	scroll *container.Scroll
-	m      sync.Mutex
+	entry       *widget.Entry
+	logs        *widget.TextGrid
+	scroll      *container.Scroll
+	defaultText string
+	m           sync.Mutex
 }
 
 // CreateRenderer 实现 fyne.WidgetRenderer，用于渲染控件
@@ -38,20 +39,35 @@ func (l *LogBoard) AppendLogf(format string, args ...any) {
 	}
 	l.Refresh()
 }
+func (l *LogBoard) SetText(text string) {
+	l.m.Lock()
+	defer l.m.Unlock()
+	l.entry.SetText(text)
+}
+func (l *LogBoard) Clear() {
+	l.m.Lock()
+	defer l.m.Unlock()
+	l.logs.SetText(l.defaultText)
+	l.Refresh()
+}
 func NewLogBoard(text string, weight, height float32) *LogBoard {
 	boardLog := widget.NewTextGrid()
 	boardLog.ShowLineNumbers = true
+	if len(text) == 0 {
+		text = "\n"
+	}
 	boardLog.SetText(text)
 	entry := widget.NewEntry()
 	entry.SetText(text)
 	entry.Append(text)
 	boardScroll := container.NewScroll(entry)
-	boardScroll.SetMinSize(fyne.NewSize(weight, height)) // 限制宽度为 600，高度为 200
+	boardScroll.SetMinSize(fyne.NewSize(weight, height))
 	l := &LogBoard{
-		entry:  entry,
-		logs:   boardLog,
-		scroll: boardScroll,
-		m:      sync.Mutex{},
+		defaultText: text,
+		entry:       entry,
+		logs:        boardLog,
+		scroll:      boardScroll,
+		m:           sync.Mutex{},
 	}
 	l.ExtendBaseWidget(l)
 	return l

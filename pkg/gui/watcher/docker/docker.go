@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"log"
@@ -46,6 +47,26 @@ func Screen(w fyne.Window) fyne.CanvasObject {
 	imageCountLabel := widget.NewLabel("Images: 0")
 	cpuUsageBar := widget.NewProgressBar()
 	memoryUsageBar := widget.NewProgressBar()
+	// 详细信息按钮
+	networkDetailsButton := widget.NewButton("Show Network Details", func() {
+		details, err := cli.GetDockerNetworkDetails()
+		if err != nil {
+			log.Println("Error fetching network details:", err)
+			widget.ShowPopUp(widget.NewLabel("Failed to fetch network details"), w.Canvas())
+			return
+		}
+		dialog.ShowInformation("Network Details", details, w)
+	})
+
+	volumeDetailsButton := widget.NewButton("Show Volume Details", func() {
+		details, err := cli.GetDockerVolumeDetails()
+		if err != nil {
+			log.Println("Error fetching volume details:", err)
+			widget.ShowPopUp(widget.NewLabel("Failed to fetch volume details"), w.Canvas())
+			return
+		}
+		dialog.ShowInformation("volume Details", details, w)
+	})
 	go func(imageCountLabel *widget.Label, cpuUsageBar *widget.ProgressBar) {
 		ticker := time.NewTicker(1 * time.Second)
 		defer ticker.Stop()
@@ -77,6 +98,8 @@ func Screen(w fyne.Window) fyne.CanvasObject {
 		cpuUsageBar,
 		widget.NewLabel("Memory Usage"),
 		memoryUsageBar,
+		networkDetailsButton,
+		volumeDetailsButton,
 	)
 
 	return content

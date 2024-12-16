@@ -5,49 +5,44 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"shoggothforever/beefine/pkg/component"
 	"shoggothforever/beefine/pkg/gui/watcher/bpf/logic"
+	"strings"
 )
 
-const ProbesUIName = "ListProbes"
+const HelpersUIName = "ListHelpFunction"
 
-// ProbesUI creates the UI for the List Probes feature.
-func ProbesUI() fyne.CanvasObject {
+// HelpersUI creates the UI for the List Probes feature.
+func HelpersUI() fyne.CanvasObject {
 	// 获取 hooks 数据
-	progTypeToHooks := logic.ListProbes()
-
+	progTypeToHooks := logic.ListHelperFunc()
 	// 下拉菜单：progtype
 	progTypeSelect := widget.NewSelect([]string{}, nil)
 	progTypeSelect.PlaceHolder = "Select ProgType"
-
-	// 下拉菜单：hook
-	hookSelect := widget.NewSelect([]string{}, nil)
-	hookSelect.PlaceHolder = "Select Hook"
 
 	// 初始化 ProgType 选项
 	for progType := range progTypeToHooks {
 		progTypeSelect.Options = append(progTypeSelect.Options, progType)
 	}
 	progTypeSelect.Refresh()
-
+	// 可用hook看板
+	log := component.NewLogBoard("eBPF helpers supported for program type", 200, 400)
 	// 监听 ProgType 的选择事件
 	progTypeSelect.OnChanged = func(progType string) {
 		// 更新 hookSelect 的内容
 		hooks, exists := progTypeToHooks[progType]
 		if !exists {
-			hookSelect.Options = []string{}
+			log.SetText("\n")
 		} else {
-			hookSelect.Options = hooks
+			log.SetText(strings.Join(hooks, "\n"))
 		}
-		hookSelect.Refresh()
-		hookSelect.SetSelected("") // 重置选择
 	}
-
 	// 布局
 	return component.NewUIVBox(
 		PKGName,
-		ProbesUIName,
+		HelpersUIName,
 		nil,
+		widget.NewLabel("get eBPF helpers function"),
 		widget.NewLabel("Select a ProgType and Hook:"),
 		progTypeSelect,
-		hookSelect,
+		log,
 	)
 }

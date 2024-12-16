@@ -95,7 +95,6 @@ int handle_exit(struct trace_event_raw_sched_process_template *ctx)
 	/* fill out the sample with data */
 	// task = (struct task_struct *)bpf_get_current_task();
 	/* if we recorded start of the process, calculate lifetime duration */
-//	start_ts = bpf_map_lookup_elem(&ct, &pid);
 
 	bpf_map_delete_elem(&cg_pid_map, &pid);
     e->prio=ctx->prio;

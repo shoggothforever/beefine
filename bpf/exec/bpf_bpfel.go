@@ -13,8 +13,8 @@ import (
 )
 
 type bpfEvent struct {
-	Pid       int32
-	Prio      int32
+	Pid       uint32
+	Prio      uint32
 	Ts        uint64
 	Comm      [16]int8
 	ExitEvent bool

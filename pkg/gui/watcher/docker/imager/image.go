@@ -89,7 +89,6 @@ func NewToolBar(ImageLogs *component.LogBoard, bpfLogs *component.LogBoard) *fyn
 	v := reflect.TypeOf(imageSelector)
 	for i := 0; i < v.NumMethod(); i++ {
 		m := v.Method(i)
-		//fmt.Println(m.Name)
 		if strings.HasPrefix(m.Name, "choose") {
 			imageSelector.cancelMap[m.Name] = nil
 		}
@@ -103,7 +102,6 @@ func NewToolBar(ImageLogs *component.LogBoard, bpfLogs *component.LogBoard) *fyn
 		widget.NewCheck("mount", imageSelector.chooseMount),
 		widget.NewCheck("network", imageSelector.chooseNetwork),
 		widget.NewCheck("isolation", imageSelector.chooseIsolation),
-		//widget.NewCheck("process", imageSelector.chooseProcess),
 		jsonEditor,
 		runButton,
 	)

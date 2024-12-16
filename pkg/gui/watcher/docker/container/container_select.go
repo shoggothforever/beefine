@@ -283,7 +283,7 @@ func (w *ContainersSelect) chooseProcess(b bool) {
 		pid := stat.State.Pid
 		ctx, ctxCancel := context.WithCancel(context.Background())
 		go w.getNsPeersV(ctx, pid, "pid")
-		req := exec2.ExecReq{ContainerPid: int32(pid)}
+		req := exec2.ExecReq{ContainerPid: uint32(pid)}
 		out, cancel := exec2.Start(&req)
 		w.cancelMap["chooseProcess"] = func() {
 			ctxCancel()

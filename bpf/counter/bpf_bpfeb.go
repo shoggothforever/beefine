@@ -12,6 +12,15 @@ import (
 	"github.com/cilium/ebpf"
 )
 
+type bpfPktInfo struct {
+	SrcIp    uint32
+	DstIp    uint32
+	SrcPort  uint16
+	DstPort  uint16
+	Protocol uint8
+	_        [3]byte
+}
+
 // loadBpf returns the embedded CollectionSpec for bpf.
 func loadBpf() (*ebpf.CollectionSpec, error) {
 	reader := bytes.NewReader(_BpfBytes)
@@ -53,13 +62,14 @@ type bpfSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfProgramSpecs struct {
-	CountPackets *ebpf.ProgramSpec `ebpf:"count_packets"`
+	CountAndInfo *ebpf.ProgramSpec `ebpf:"count_and_info"`
 }
 
 // bpfMapSpecs contains maps before they are loaded into the kernel.
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
+	Events   *ebpf.MapSpec `ebpf:"events"`
 	PktCount *ebpf.MapSpec `ebpf:"pkt_count"`
 }
 
@@ -82,11 +92,13 @@ func (o *bpfObjects) Close() error {
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
+	Events   *ebpf.Map `ebpf:"events"`
 	PktCount *ebpf.Map `ebpf:"pkt_count"`
 }
 
 func (m *bpfMaps) Close() error {
 	return _BpfClose(
+		m.Events,
 		m.PktCount,
 	)
 }
@@ -95,12 +107,12 @@ func (m *bpfMaps) Close() error {
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfPrograms struct {
-	CountPackets *ebpf.Program `ebpf:"count_packets"`
+	CountAndInfo *ebpf.Program `ebpf:"count_and_info"`
 }
 
 func (p *bpfPrograms) Close() error {
 	return _BpfClose(
-		p.CountPackets,
+		p.CountAndInfo,
 	)
 }
 
