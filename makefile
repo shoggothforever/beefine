@@ -47,9 +47,13 @@ windows:
 
 .PHON: macos
 macos:
+	@go env -w CC=darwin
 	@go env -w GOOS=darwin
 	@go env -w GOARCH=amd64
 	@PKG_OS=darwin
+.PHON: clean
+clean:
+	@rm -r *.tar.xz
 # 帮助信息
 .PHONY: help
 help:

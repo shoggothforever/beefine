@@ -22,7 +22,8 @@ func parseURL(urlStr string) *url.URL {
 }
 
 func Screen(_ fyne.Window) fyne.CanvasObject {
-	logo := canvas.NewImageFromFile("internal/data/assets/logo.png")
+
+	logo := canvas.NewImageFromFile("logo.png")
 	logo.FillMode = canvas.ImageFillContain
 	if fyne.CurrentDevice().IsMobile() {
 		logo.SetMinSize(fyne.NewSize(384, 384))

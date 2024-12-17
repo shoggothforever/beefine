@@ -9,36 +9,35 @@
 ## 创建初衷
 
 容器化技术已经成为现代软件开发和部署的核心工具，而 Docker 是其中的代表。然而，在使用容器时，很多开发者并不清楚容器创建的具体过程，例如操作系统如何处理镜像解压、文件系统挂载和网络隔离等底层细节。
-
+而docker-swarm和kubernetes等等容器编排系统更是让现在应用系统中的容器数量激增，而理解其中的最小单元pod更加需要理解pod中的容器通信方式\
 为了帮助开发者更直观地理解这些细节，**Beefine** 通过 eBPF 技术捕获和分析容器的系统调用行为，并借助 Fyne 提供图形化的实时反馈，最终实现以下目标：
 
 1. **简化学习过程**：
-
-    - 通过实时观测容器创建过程，帮助开发者更好地理解虚拟化技术。
+    - 通过实时观测容器创建过程，帮助开发者更好地理解容器镜像，虚拟化技术。
 2. **提高可视化交互体验**：
-
     - 提供直观的图形界面，展示关键的系统行为和资源变化。
+    - 配置了动态加载bpf程序的入口，让使用者快速实践bpf
 3. **开发工具化**：
-
     - 为学习者和工程师提供一个可以随时实验和验证的工具，减少操作系统实验的门槛。
-
 ---
 
 ## 项目用途
-
-该项目目前专注于以下场景：
-
+该项目目前专注于**实时观测**场景 ：
 1. **Docker容器创建观测**：
     - 实时加载 eBPF 程序，捕获 Docker 使用镜像创建容器时的操作系统行为。
     - 包括镜像拉取、文件系统设置、命名空间管理、网络配置等。
     - 为学习者和开发者提供实验环境，用于理解容器的实现原理，如Namespace、Cgroup 和 UnionFS。
 2. **Docker容器运行时**
+    - 实时的容器所处namespace和cgroup信息展示以及设置
+    - 动态加载xdp程序管理分析容器网络中的数据包
+    - 动态观测容器中的进程信息
 3. **动态 eBPF 程序管理**：
     - 提供直观界面加载和管理 eBPF 程序，动态分析系统行为。
 4. **图形化分析**：
-    - 通过 GUI 展示分析结果，帮助用户直观理解容器的底层运行机制。
+    - 使用 Fyne 提供直观、易用的 GUI，通过 GUI 展示分析结果，帮助用户直观理解容器的底层运行机制。
 5. **未来扩展**：
     - 为 Kubernetes 集群提供监控支持，观测 Pod 的创建、调度和运行。
+
 ---
 
 ## 项目进度
@@ -46,50 +45,24 @@
 ### 已实现功能
 
 1. **Docker 创建过程观测**：
-
     - 使用 eBPF 追踪操作系统调用，捕获 Docker 使用镜像创建容器的全过程。
 2. **图形化界面**：
-
     - 使用 Fyne 开发可交互的 GUI，包括日志查看、动态程序加载等功能。
 3. **实时 eBPF 程序加载**：
-
     - 支持用户加载自定义 eBPF 程序，动态分析特定行为。
 
 ### 待开发功能
 
 1. **Kubernetes 集群观测**：
-
     - 设计用于追踪 Kubernetes Pod 调度与运行的功能模块。
 2. **镜像与容器的性能分析**：
-
     - 提供更多统计功能，分析资源使用情况（CPU、内存、I/O 等）。
 3. **历史数据管理**：
-
     - 支持保存和回放观测结果，便于后续分析。
 4. **优化 GUI**：
-
     - 增加更多交互功能，例如高级过滤、实时图表更新。
 
----
-
-## 功能特性
-
-1. **实时观测**：
-
-    - 动态加载 eBPF 程序，实时分析 Docker 创建容器过程中的关键操作。
-2. **图形化界面**：
-
-    - 使用 Fyne 提供直观、易用的 GUI，帮助用户快速理解分析结果。
-3. **可扩展性**：
-
-    - 为未来支持 Kubernetes 和其他虚拟化技术的监控分析提供基础。
-4. **学习友好**：
-
-    - 为开发者提供操作系统行为的可视化教学工具。
-
----
-
-## 当前开发进度
+### 当前开发进度
 
 1. **功能模块**：
 
@@ -114,36 +87,38 @@
     - [X] cpu信息
     - [X] memory信息
 - 后续计划扩展到更多场景，包括：
-
     - [ ] 容器运行时的性能分析。
     - [ ] Kubernetes 集群中的容器行为观测。
 
 ## 快速开始文档
 
-### 系统要求
+
+
+### 0.系统要求
 
 - **操作系统**：Ubuntu 20.04 或更高版本
 - **架构**：AMD64
 - **依赖工具**：
-
     - **Go**：版本 >= 1.18
     - **Docker**：需要 Docker Daemon 运行
+    - **X11 开发库**
+    - **bpftool,bpftrace工具"
     - **权限**：eBPF 程序需要管理员权限运行
 
 ---
 
-## 1. 编译源码
+### 1. 编译源码
 
 以下是编译源码的方法，适用于开发者或需要自定义功能的用户。
 
-### 安装依赖
+#### 安装依赖
 
 在编译源码前，请确保系统已安装以下依赖：
 
 1. **安装 Go** 如果未安装 Go，可以通过以下命令安装：
 ```bash
 sudo apt update 
-sudo apt install -y golang
+sudo apt install -y golang gcc
 ```
 2. 检查安装是否成功：确保版本 >= 1.18
 ```bash 
@@ -151,19 +126,29 @@ go version
 ```
 **安装 Docker** 如果未安装 Docker，可以参考以下命令安装：
 ```bash
- sudo apt update sudo apt install -y docker.io ``sudo systemctl enable --now docker
+ sudo apt update sudo apt install -y docker.io && sudo usermod -aG docker ${USER} && sudo systemctl enable --now docker
 ```
 **确保管理员权限** eBPF 程序需要管理员权限，确保当前用户在 `sudo` 或 `root` 下运行。
-
+3. 安装X11开发库以及fyne依赖库
+```bash
+sudo apt install libx11-dev libx11-xcb-dev libgl1-mesa-dev xorg-dev build-essential pkg-config
+4. bpftrace安装
+https://github.com/bpftrace/bpftrace/blob/master/INSTALL.md
+5.bpftool安装
+https://github.com/libbpf/bpftool/releases
+```
 ### 克隆项目源码
 ```
 git clone https://github.com/shoggothforever/beefine.git
-cd beefine
+cd beefine 
+go mod tidy // 安装必要的golang 依赖库
 ```
 ### 编译程序
 可选项：在源码bpf目录下添加自定义的bpf程序
+对于每个bpf程序，定义一个bpfxxx.go文件作为用户态处理程序，一个bpfxxx.c文件作为内核态程序，结合bpf2go与libbpf实现自定义bpf程序\
+```make gen PKG=$(yourBpfProgramName)```\
 参考项目makefile直接编译源码：
-```make build```
+```编译可执行文件 make build ```
 
 如果没有改动bpf程序，可以使用以下命令：
 `go build -ldflags "-s -w" -o beefine`
@@ -171,6 +156,13 @@ cd beefine
 编译成功后，执行以下命令运行：
 `sudo ./beefine`
 程序将启动图形化界面。
+### 打包程序
+具体参考fyne官网 [Compiling for different platforms](https://docs.fyne.io/started/cross-compiling)
+```
+make package linux # GOOS=linux GOARCH=amd64
+make package macos # GOOS=darwin GOARCH=amd64
+make package windows # GOOS=windows GOARCH=amd64
+```
 
 ---
 
@@ -185,7 +177,7 @@ cd beefine
 以 Ubuntu 20.04 为例：
 
 ``` bash
-wget https://github.com/your-repo/beefine/releases/download/v1.0.0/beefine-linux-amd64 -O beefine
+wget https://github.com/shoggothforever/beefine/releases/download/v1.0.0/beefine-linux-amd64 -O beefine
 chmod +x beefine
 ```
 ### 安装依赖
@@ -193,6 +185,7 @@ chmod +x beefine
 确保以下依赖已安装：
 
 1. **Docker**： 安装命令参考上述 **编译源码** 部分。
+2. **X11图形库** 安装命令参考上述 **编译源码** 部分。
 2. **权限设置**： 确保当前用户拥有运行 eBPF 程序的权限。
 
 ### 运行程序
@@ -264,10 +257,20 @@ chmod +x beefine
     - 增加更多实时图表和分析报告，提升用户体验。
 4. **跨平台支持**：
     - 提供更多平台的支持，兼容 Windows 和 macOS。
+5. **支持ssh连接到远程主机观测容器信息**
 ---
 
-
-
+## 参考项目
+[ebpf开发教程 eunomia-bpf](https://github.com/eunomia-bpf/bpf-developer-tutorial/tree/main)\
+[eXpress Data Path program written tutor](https://github.com/xdp-project/xdp-tutorial/tree/master)\
+[bpf程序代码风格参考-1 cilium](https://github.com/cilium/cilium/tree/main/bpf)\
+[bpf程序代码风格参考-2 linux源码中的bpf程序以及linux源码](https://elixir.bootlin.com/linux/v6.11.5/source/samples/bpf)\
+[基于libbpf的bpf程序编程入门 libbpf-bootstrap](https://github.com/libbpf/libbpf-bootstrap/tree/master/examples)\
+[libbpf-api](https://libbpf.readthedocs.io/en/latest/api.html)\
+[fyne图形界面设计参考](https://github.com/fyne-io/fyne/tree/master/cmd/fyne_demo)\
+[cilium框架官方文档](https://docs.cilium.io/en/stable/network/clustermesh/)\
+[bpf verifier rules](https://www.kernel.org/doc/html/latest/bpf/verifier.html)\
+[ebpf可视化项目参考](https://github.com/linuxkerneltravel/lmp/tree/develop/eBPF_Visualization)\
+[bpftrace 脚本参考](https://github.com/bpftrace/bpftrace/tree/master/tools)
 ## 开源协议
-
 本项目采用 [MIT License](https://opensource.org/licenses/MIT) 开源协议，详情请参见 LICENSE 文件。
