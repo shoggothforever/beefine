@@ -77,7 +77,7 @@ func CreateWatcher() fyne.CanvasObject {
 	title := widget.NewLabel("Component name")
 	intro := widget.NewLabel("An introduction would probably go\nhere, as well as a")
 	intro.Wrapping = fyne.TextWrapWord
-	//w := a.NewWindow("beefineInner")
+
 	setWatcher := func(t Watcher) {
 		title.SetText(t.Title)
 		intro.SetText(t.Intro)

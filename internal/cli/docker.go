@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -236,7 +237,7 @@ func GetContainerStatJson(id string) (container.StatsResponse, error) {
 	defer stats.Body.Close()
 	// 解析并显示统计信息
 	var statsJSON container.StatsResponse
-	if err := json.NewDecoder(stats.Body).Decode(&statsJSON); err != nil {
+	if err := json.NewDecoder(stats.Body).Decode(&statsJSON); err != nil && !errors.Is(err, io.EOF) {
 		log.Fatalf("Error decoding stats: %v", err)
 	}
 	return statsJSON, err
