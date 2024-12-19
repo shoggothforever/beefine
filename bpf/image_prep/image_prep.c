@@ -9,7 +9,7 @@ struct event {
     __u32 pid;
     __u64 bytes; // 记录文件读写字节数
     char comm[16];
-    char operation[16];
+    char operation[32];
     char filename[256];
 };
 struct event *unused __attribute__((unused));

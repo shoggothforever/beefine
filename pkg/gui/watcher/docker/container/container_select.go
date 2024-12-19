@@ -37,11 +37,11 @@ type ContainersSelect struct {
 // NewContainersSelect 创建自定义控件实例
 func NewContainersSelect(containerLogs *component.LogBoard, bpfLogs *component.LogBoard) *ContainersSelect {
 	// 初始化 Select
+	var containertags []string
 	containers, err := cli.ListContainer()
 	if err != nil {
 		return nil
 	}
-	var containertags []string
 	containerMap := make(map[string]*types.Container)
 	for k, v := range containers {
 		for _, name := range v.Names {
@@ -64,6 +64,27 @@ func NewContainersSelect(containerLogs *component.LogBoard, bpfLogs *component.L
 	s.base.OnChanged = s.OnChanged
 	s.base.PlaceHolder = "select existed containers"
 	s.containerButton = widget.NewButton("waiting...", s.OnClick)
+	go func() {
+		for {
+			time.Sleep(3 * time.Second)
+			containers, err = cli.ListContainer()
+			if err != nil {
+				return
+			}
+			containerMap = make(map[string]*types.Container)
+			containertags = []string{}
+			for k, v := range containers {
+				for _, name := range v.Names {
+					name = buildTag(name, &v)
+					containertags = append(containertags, name)
+					containerMap[name] = &containers[k]
+					break
+				}
+			}
+			s.base.Options = containertags
+			s.containers = containerMap
+		}
+	}()
 	s.ExtendBaseWidget(s) // 必须扩展 BaseWidget
 	return s
 }
@@ -123,6 +144,7 @@ func (w *ContainersSelect) OnClick() {
 	err := cli.ChangeContainerState(w.currentContainer.ID, cli.CheckContainerRunningState(w.currentContainer.Status))
 	if err != nil {
 		fmt.Println("change container state error", err)
+		return
 	}
 	status, err := cli.ContainerInspect(w.currentContainer.ID)
 	w.currentContainer.Status = status.State.Status
@@ -142,19 +164,16 @@ func NewContainerToolBar(containerLogs *component.LogBoard, bpfLogs *component.L
 		cst,
 		widget.NewSeparator(),
 		cst.containerButton,
-		widget.NewCheck("isolationInfo", cst.chooseIsolationInfo),
-		widget.NewCheck("diskInfo", cst.chooseDiskInfo),
-		widget.NewCheck("netInfo", cst.chooseNetInfo),
-		widget.NewCheck("process", cst.chooseProcess),
-		widget.NewCheck("cpu", cst.chooseCpu),
-		widget.NewCheck("memory", cst.chooseMemory),
+		widget.NewCheck("isolationInfo", cst.buildChoose(cst.chooseIsolationInfo)),
+		widget.NewCheck("diskInfo", cst.buildChoose(cst.chooseDiskInfo)),
+		widget.NewCheck("netInfo", cst.buildChoose(cst.chooseNetInfo)),
+		widget.NewCheck("process", cst.buildChoose(cst.chooseProcess)),
+		widget.NewCheck("cpu", cst.buildChoose(cst.chooseCpu)),
+		widget.NewCheck("memory", cst.buildChoose(cst.chooseMemory)),
 	)
 }
 
 func (w *ContainersSelect) chooseDiskInfo(b bool) {
-	if !w.checkBeforeChoose() {
-		return
-	}
 	if b {
 		w.m.Lock()
 		if len(w.currentContainer.Mounts) == 0 {
@@ -179,9 +198,6 @@ func (w *ContainersSelect) chooseDiskInfo(b bool) {
 }
 
 func (w *ContainersSelect) chooseIsolationInfo(b bool) {
-	if !w.checkBeforeChoose() {
-		return
-	}
 	if b {
 		w.m.Lock()
 		stat, err := cli.ContainerInspect(w.currentContainer.ID)
@@ -243,9 +259,6 @@ func (w *ContainersSelect) chooseIsolationInfo(b bool) {
 }
 
 func (w *ContainersSelect) chooseNetInfo(b bool) {
-	if !w.checkBeforeChoose() {
-		return
-	}
 	if b {
 		w.m.Lock()
 		w.containerLogs.AppendLogf("Networks used by container:")
@@ -265,9 +278,6 @@ func (w *ContainersSelect) chooseNetInfo(b bool) {
 }
 
 func (w *ContainersSelect) chooseProcess(b bool) {
-	if !w.checkBeforeChoose() {
-		return
-	}
 	if b == true {
 		fmt.Println("choose watch process")
 		w.m.Lock()
@@ -283,6 +293,7 @@ func (w *ContainersSelect) chooseProcess(b bool) {
 		pid := stat.State.Pid
 		ctx, ctxCancel := context.WithCancel(context.Background())
 		go w.getNsPeersV(ctx, pid, "pid")
+		w.containerLogs.AppendLogf("get container's pid %d", pid)
 		req := exec2.ExecReq{ContainerPid: uint32(pid)}
 		out, cancel := exec2.Start(&req)
 		w.cancelMap["chooseProcess"] = func() {
@@ -295,10 +306,10 @@ func (w *ContainersSelect) chooseProcess(b bool) {
 			for e := range out {
 				comm := helper.Bytes2String(e.Comm[:])
 				if e.ExitEvent {
-					w.bpfLogs.AppendLogf("exit duration_ns:%v,prio:%d, pid: %d, comm: %s\n", e.Ts-mp[comm], e.Prio, e.Pid, comm)
+					w.bpfLogs.AppendLogf("exit duration_ns:%v,prio:%d, pid: %d,ppid: %d, comm: %s\n", e.Ts-mp[comm], e.Prio, e.Pid, comm)
 				} else {
 					mp[comm] = e.Ts
-					w.bpfLogs.AppendLogf("exec pid: %d, comm: %s\n", e.Pid, comm)
+					w.bpfLogs.AppendLogf("exec pid: %d,ppid:%d comm: %s\n", e.Pid, comm)
 				}
 			}
 		}()
@@ -312,14 +323,13 @@ func (w *ContainersSelect) chooseProcess(b bool) {
 }
 
 func (w *ContainersSelect) chooseCpu(b bool) {
-	if !w.checkBeforeChoose() {
-		return
-	}
 	if b {
 		w.m.Lock()
+		defer w.m.Unlock()
 		statsJSON, err := cli.GetContainerStatJson(w.currentContainer.ID)
 		if err != nil {
 			log.Println("Error getting container stats: %v", err)
+			return
 		}
 		str := fmt.Sprintf("totalUseTime:%fs,in kern:%fs,in user:%fs", (float64)(statsJSON.CPUStats.CPUUsage.TotalUsage)/1e9, (float64)(statsJSON.CPUStats.CPUUsage.UsageInKernelmode)/1e9, (float64)(statsJSON.CPUStats.CPUUsage.UsageInUsermode)/1e9)
 		w.containerLogs.AppendLogf(str)
@@ -329,20 +339,27 @@ func (w *ContainersSelect) chooseCpu(b bool) {
 	}
 }
 func (w *ContainersSelect) chooseMemory(b bool) {
-	if !w.checkBeforeChoose() {
-		return
-	}
 	if b {
 		w.m.Lock()
+		defer w.m.Unlock()
 		statsJSON, err := cli.GetContainerStatJson(w.currentContainer.ID)
 		if err != nil {
 			log.Println("Error getting container stats: %v", err)
+			return
 		}
 		str := fmt.Sprintf("memory used:%fMB", float64(statsJSON.MemoryStats.Usage)/1024/1024)
 		w.containerLogs.AppendLogf(str)
-		w.m.Unlock()
+
 	} else {
 
+	}
+}
+func (w *ContainersSelect) buildChoose(fn func(b bool)) func(b bool) {
+	return func(b bool) {
+		if !w.checkBeforeChoose() {
+			return
+		}
+		fn(b)
 	}
 }
 func (w *ContainersSelect) checkBeforeChoose() bool {
@@ -385,18 +402,18 @@ func (w *ContainersSelect) getNsPeersV(ctx context.Context, pid int, nsType stri
 		log.Fatalf("Failed to get Namespace ID for PID %d and type %s: %v", pid, nsType, err)
 	}
 
-	w.bpfLogs.AppendLogf("Monitoring peers in the same namespace ")
-	w.bpfLogs.AppendLogf("Namespace Type: %s, Namespace ID: %s", nsType, nsID)
-	w.bpfLogs.AppendLogf("PID     PPID   USER     COMMAND")
+	w.containerLogs.AppendLogf("Monitoring peers in the same namespace ")
+	w.containerLogs.AppendLogf("Namespace Type: %s, Namespace ID: %s", nsType, nsID)
+	w.containerLogs.AppendLogf("PID     PPID   USER     COMMAND")
 	// 使用 map 记录已发现的进程
 	discoveredPeers := make(map[int]struct{})
 	// 实时监控
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Println("Context canceled. Exiting.")
+			log.Println("Context canceled. Exiting.")
 			return
 		case <-ticker.C:
 			// 检测 Namespace 中的进程
@@ -409,7 +426,7 @@ func (w *ContainersSelect) getNsPeersV(ctx context.Context, pid int, nsType stri
 			for _, peer := range currentPeers {
 				info, err := cli.GetProcessInfo(peer)
 				if err == nil {
-					w.bpfLogs.AppendLogf(info)
+					w.containerLogs.AppendLogf(info)
 				}
 			}
 		}

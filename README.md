@@ -90,9 +90,57 @@
     - [ ] 容器运行时的性能分析。
     - [ ] Kubernetes 集群中的容器行为观测。
 
+---
+## 文件结构
+├── bpf/                     # 主程序入口 <br>
+│   ├──*/                    # bpf2go与libbpf结合bpf程序 <br>
+│   └──vmlinux.h             # bpf 的 btf文件 ` `<br>
+├── pkg/                     # 可以导出的包,提供可以复用的组件和逻辑代码 ` `<br>
+│   │── gui/                 # Fyne GUI 相关代码 ` `<br>
+│   │  ├── themes/           # 存放fyneUI 设计的功能代码 ` `<br>
+│   │  └── watcher/          # Docker 功能界面 ` `<br>
+│   └── component/           # 存放自定义的的fyne组件 ` `<br>
+├── internal/                # Docker 操作工具 ` `<br>
+│   ├── cli/                 # Docker以及脚本交互管理 ` `<br>
+│   ├── data/                # fyne资源管理 ` `<br>
+│   └── helper               # 通用辅助函数 ` `<br>
+├── configs/                 # 项目配置  ` `<br>
+├── scripts/                 # 存放脚本文件 ` `<br>
+├── test/                    # 存放测试用例以及脚本 ` ` <br>
+├── main.go                  # GO 程序入口 <br>
+├── go.mod                   # Go 模块文件 ` ` <br>
+├── makefile                 # 项目编译脚本 <br>
+├── license                  # 证书文件 <br>
+└── README.md                # 项目文档 ` <br>
+---
+## 模块说明
+### Load eBPF 模块
+![img.png](internal/data/assets/doc/img_6.png)    
+提供了几个基础的bpf程序，可以供使用者载入，了解ebpf程序的运行效果
+包括功能：
+- 展示系统中可用的bpf帮助函数，为初学者提供开发上的帮助
+- 选择网卡接口，实时获取经过网卡的数据计数，并展示部分报文信息
+![img_1.png](internal/data/assets/doc/img_7.png)
+- 载入ebpf程序监测系统中的exec系统调用，在入口和出口处都设置了钩子函数，实时展示系统中运行和退出的程序
+![img_2.png](internal/data/assets/doc/img_8.png)
+
+### Docker DashBoard 
+展示系统中的docker daemon实时的使用情况，提供功能便于使用者了解docker运行的整体情况
+实现重点：获取系统中的容器和镜像数量，以及统计所有运行中的容器对系统cpu和memory资源的使用情况
+![img_3.png](internal/data/assets/doc/img_9.png)
+
+### Docker-image monitor模块
+![img_4.png](internal/data/assets/doc/img_4.png)
+该模块聚焦于观测docker基于image创建容器的全过程，聚合了docker 对image的管理能力，可以输入image name 拉取image，拉取选择系统中存在的镜像，右侧的看板会展示当前镜像创建的过程日志 \
+实现重点：通过日志还原docker解析image创建容器的过程\
+镜像解析：镜像格式遵守OCI镜像规范定义，包含镜像索引，镜像清单，镜像层以及镜像配置。镜像索引用以区分镜像的不同架构平台，镜像清单中包含了镜像具体内容的哈希摘要，提供了获取镜像的寻址方式，提取镜像层信息的方法，因此主要涉及的系统调用就是openat，read，write等fs接口，docker的容器文件系统采用的是unionfs，容器最初只有一层rootfs，解析镜像层文件中的每一层都会往rootfs上覆盖新的一层，而镜像配置则主要包含了镜像中的环境变量，执行参数，存储卷等信息，docker会通过镜像配置中的内容得到对应的OCI runtime bundle启动容器\
+创新点：实现对VFS，挂载，网络和隔离api的bpf观测程序交互式地载入策略，可以允许使用者按需获取镜像加载数据
+### Docker-container monitor模块
+![img_5.png](internal/data/assets/doc/img_5.png)
+该模块聚焦于运行中的容器的实时数据分析，OCI运行时规范规定了容器的运行状态，该模块主要观测的是出于stopped和running状态的容器，对于running状态的容器可以观测到更多有关的数据，容器本身的隔离使用了namespace和cgroup等等linux 容器技术，docker 则是通过容器运行时来管理容器
+实现重点：分析容器的namespace以及cgroup信息
+创新点：实时获取同一namespace中的peer信息，以pid namespace为例，实现了实时获取容器中新增运行进程信息的展示，减少容器外信息的干扰，其他的namespace空间也类似
 ## 快速开始文档
-
-
 
 ### 0.系统要求
 
@@ -194,30 +242,7 @@ chmod +x beefine
 
 `sudo ./beefine`
 
----
 
-## 文件结构
-├── bpf/                     # 主程序入口 <br>
-│   ├──*/                    # bpf2go与libbpf结合bpf程序 <br>
-│   └──vmlinux.h             # bpf 的 btf文件 ` `<br>
-├── pkg/                     # 可以导出的包,提供可以复用的组件和逻辑代码 ` `<br>
-│   │── gui/                 # Fyne GUI 相关代码 ` `<br>
-│   │  ├── themes/           # 存放fyneUI 设计的功能代码 ` `<br>
-│   │  └── watcher/          # Docker 功能界面 ` `<br>
-│   └── component/           # 存放自定义的的fyne组件 ` `<br>
-├── internal/                # Docker 操作工具 ` `<br>
-│   ├── cli/                 # Docker以及脚本交互管理 ` `<br>
-│   ├── data/                # fyne资源管理 ` `<br>
-│   └── helper               # 通用辅助函数 ` `<br>
-├── configs/                 # 项目配置  ` `<br>
-├── scripts/                 # 存放脚本文件 ` `<br>
-├── test/                    # 存放测试用例以及脚本 ` ` <br>
-├── main.go                  # GO 程序入口 <br>
-├── go.mod                   # Go 模块文件 ` ` <br>
-├── makefile                 # 项目编译脚本 <br>
-├── license                  # 证书文件 <br>
-└── README.md                # 项目文档 ` <br>
----
 
 ## 使用方法
 

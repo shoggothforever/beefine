@@ -23,7 +23,7 @@ type ImagePreRes struct {
 	_         [4]byte
 	Bytes     uint64
 	Comm      [16]byte
-	Operation [16]byte
+	Operation [32]byte
 	Filename  [256]byte
 }
 

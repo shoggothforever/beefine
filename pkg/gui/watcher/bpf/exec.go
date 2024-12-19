@@ -36,6 +36,7 @@ func ExecUI() fyne.CanvasObject {
 			if e.ExitEvent {
 				fmt.Printf("exit duration_ns:%v,prio:%d, pid: %d, comm: %s\n", e.Ts-mp[comm], e.Prio, e.Pid, comm)
 				log.AppendLogf("exit duration_ns:%v,prio:%d, pid: %d, comm: %s\n", e.Ts-mp[comm], e.Prio, e.Pid, comm)
+				delete(mp, comm)
 			} else {
 				mp[comm] = e.Ts
 				fmt.Printf("exec pid: %d, comm: %s\n", e.Pid, comm)
