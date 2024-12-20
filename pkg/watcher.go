@@ -21,6 +21,7 @@ type Watcher struct {
 	View         func(w fyne.Window) fyne.CanvasObject
 }
 
+// Watchers 应用程序UI目录树中的结点信息
 var Watchers = map[string]Watcher{
 	"welcome":   {"welcome", "Welcome to the beefine observer", welcome.Screen},
 	"BPF":       {"Load eBPF", "Observe system-level activities", bpf.Screen},
@@ -29,10 +30,13 @@ var Watchers = map[string]Watcher{
 	"container": {"Container Monitoring", "Monitor running container performance", container2.Screen},
 }
 
+// WatcherIndex 目录树UI中各个节点的连接关系
 var WatcherIndex = map[string][]string{
 	"":       {"welcome", "BPF", "Docker"},
 	"Docker": {"imager", "container"},
 }
+
+// viewsSet 保存创建过的canvas信息，避免重复创建
 var viewsSet = map[string][]fyne.CanvasObject{}
 
 func CreateTree(setWatcher func(t Watcher)) *widget.Tree {
@@ -93,10 +97,10 @@ func CreateWatcher() fyne.CanvasObject {
 	}
 
 	//设置初始的选项卡
-	setWatcher(Watchers["container"])
+	setWatcher(Watchers["welcome"])
 	watcherBoarder := container.NewBorder(
 		container.NewVBox(title, widget.NewSeparator(), intro), nil, nil, nil, content)
-
+	//创建目录树结构
 	t := CreateTree(setWatcher)
 	treeBoarder := container.NewBorder(nil, themes2.CreateThemes(a), nil, nil, t)
 
@@ -108,8 +112,11 @@ func CreateWatcher() fyne.CanvasObject {
 var TopWindow fyne.Window
 
 func WatcherStart() {
+	//配置应用ID
 	a := app.NewWithID("io.watcher.beefine")
+	//设置应用ICON
 	a.SetIcon(fyne.NewStaticResource("icon", assets.LogoIcon))
+	//设置程序主窗口
 	TopWindow = a.NewWindow("beefine")
 	// 初始化窗口内容
 	TopWindow.SetContent(CreateWatcher())

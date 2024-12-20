@@ -7,7 +7,7 @@ PKG ?= default_arg
 PKG_OS := linux
 # 默认目标
 .PHONY: all
-all: build
+all: update build
 
 # 执行 gen 脚本
 .PHONY: gen
@@ -15,6 +15,12 @@ gen:
 	@echo "Running gen script from $(GEN_SCRIPT)..."
 	@chmod +x $(GEN_SCRIPT) # 确保脚本有执行权限
 	@bash $(GEN_SCRIPT) $(PKG)
+
+.PHON: update
+update:
+	@echo "updating vmlinux.h"
+	@sudo bpftool btf dump file /sys/kernel/btf/vmlinux format c > bpf/vmlinux.h
+	@echo "generating vmlinux.h successfully"
 
 .PHON: build
 build:
