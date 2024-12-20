@@ -283,7 +283,7 @@ chmod +x beefine
    - isolation:查看container的namespace和cgroup的信息
    - diskInfo:查看container的挂载卷信息
    - netInfo:查看container的网络信息以及加载bpf程序检测所处网络空间中的连接信息
-   - process:查看process的进程组信息，并且实时观测当前容器所处pid namespaces下的其它进程的信息
+   - process:查看process的进程组信息，并且实时观测当前容器git所处pid namespaces下的其它进程的信息
 ![img_2.png](internal/data/assets/doc/img_2.png)
 
 ---

@@ -54,6 +54,7 @@ func Start(req *ExecReq) (chan ExecRes, func()) {
 		log.Fatalf("opening ringbuf reader: %s", err)
 	}
 	out := Action(objs, req, stopper)
+	// using closure to create only once close function
 	buildClose := func() func() {
 		once := sync.Once{}
 		return func() {
