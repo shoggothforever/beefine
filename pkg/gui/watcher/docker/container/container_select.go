@@ -191,7 +191,6 @@ func (w *ContainersSelect) chooseDiskInfo(b bool) {
 			w.containerLogs.AppendLogf("Volume%d driver: %s scope:%s mount point:%s \n", k, vol.Driver, vol.Scope, vol.Mountpoint)
 		}
 		w.m.Unlock()
-		// TODO:需要补充加载绑定容器ID的bpf程序的功能(disk IO)
 	} else {
 
 	}
@@ -255,7 +254,7 @@ func (w *ContainersSelect) chooseIsolationInfo(b bool) {
 	} else {
 
 	}
-	// TODO:需要补充加载绑定容器ID的bpf程序的功能 (seccomp,prctl,cgroup_create,cgroup_attach,set_ns)
+
 }
 
 func (w *ContainersSelect) chooseNetInfo(b bool) {
@@ -274,7 +273,6 @@ func (w *ContainersSelect) chooseNetInfo(b bool) {
 	} else {
 
 	}
-	// TODO:需要补充加载绑定容器ID的bpf程序的功能 (sock)
 }
 
 func (w *ContainersSelect) chooseProcess(b bool) {

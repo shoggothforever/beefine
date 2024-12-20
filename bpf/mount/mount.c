@@ -6,15 +6,6 @@
 
 char LICENSE[] SEC("license") = "Dual BSD/GPL";
 
-// 定义 sys_enter_mount 的参数结构
-//struct sys_enter_mount_args {
-//    char *dev_name;
-//    char *dir_name;
-//    char *type;
-//    unsigned long flags;
-//    void *data;
-//};
-
 // 定义输出到 perf buffer 的数据结构
 struct mount_event {
     __u32 pid;

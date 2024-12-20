@@ -1,5 +1,11 @@
 # beefine: Visualizing Docker Internals with eBPF
 ## 2024年全国大学生计算机系统能力大赛-操作系统赛（华东区域赛）-OS应用开发赛
+### 比赛相关信息
+学校：杭州电子科技大学\
+队伍编号：T202410336994295 \
+队名：霓虹Ultra队
+成员：蔡龙祥（队长）、谭文轩（队员）、李睿涵（队员）
+指导老师：刘真、周旭
 
 ## 项目简介
 **Beefine** 是一个基于 **Fyne** 和 **Cilium eBPF** 框架开发的工具，旨在通过图形化交互界面（GUI）实时观测 Docker 容器的创建过程，深入理解虚拟化技术的核心理念和实现原理。本项目同时支持加载和管理 eBPF 程序，帮助用户追踪操作系统在 Docker 操作中的行为，后续将扩展到 Kubernetes 集群的 Pod 监控。
@@ -40,7 +46,7 @@
 
 ---
 
-## 项目进度
+## 项目完成情况
 
 ### 已实现功能
 
@@ -79,7 +85,6 @@
         - [X] 容器隔离环境的设置（Namespace 和 Cgroup）。
 
 - Docker 容器运行中的性能观测
-
     - [X] 隔离文件信息
     - [X] 挂载磁盘信息
     - [X] 网络信息
@@ -123,23 +128,32 @@
 ![img_1.png](internal/data/assets/doc/img_7.png)
 - 载入ebpf程序监测系统中的exec系统调用，在入口和出口处都设置了钩子函数，实时展示系统中运行和退出的程序
 ![img_2.png](internal/data/assets/doc/img_8.png)
-
+**实现难点及创新点**：需要理解bpf程序的载入过程，熟悉linux内核中支持的bpf钩子函数，在限制了可以获取的函数参数信息的条件下编写能够通过bpf verifier的bpfc程序，然后结合golang的bpf辅助库实现了一键载入bpf程序，并且通过bpf map、perf、ringbuffer等数据结构实现内核态和用户态的数据交互，再结合golang 的UI库搭建了可交互的桌面端程序，把底层的细节对用户隐藏，只展示用户需要的数据。支持使用脚本一键创建bpf程序模板，方便教学使用
 ### Docker DashBoard 
 展示系统中的docker daemon实时的使用情况，提供功能便于使用者了解docker运行的整体情况
-实现重点：获取系统中的容器和镜像数量，以及统计所有运行中的容器对系统cpu和memory资源的使用情况
+**实现重点**：获取系统中的容器和镜像数量，以及统计所有运行中的容器对系统cpu和memory资源的使用情况
 ![img_3.png](internal/data/assets/doc/img_9.png)
 
 ### Docker-image monitor模块
 ![img_4.png](internal/data/assets/doc/img_4.png)
 该模块聚焦于观测docker基于image创建容器的全过程，聚合了docker 对image的管理能力，可以输入image name 拉取image，拉取选择系统中存在的镜像，右侧的看板会展示当前镜像创建的过程日志 \
-实现重点：通过日志还原docker解析image创建容器的过程\
-镜像解析：镜像格式遵守OCI镜像规范定义，包含镜像索引，镜像清单，镜像层以及镜像配置。镜像索引用以区分镜像的不同架构平台，镜像清单中包含了镜像具体内容的哈希摘要，提供了获取镜像的寻址方式，提取镜像层信息的方法，因此主要涉及的系统调用就是openat，read，write等fs接口，docker的容器文件系统采用的是unionfs，容器最初只有一层rootfs，解析镜像层文件中的每一层都会往rootfs上覆盖新的一层，而镜像配置则主要包含了镜像中的环境变量，执行参数，存储卷等信息，docker会通过镜像配置中的内容得到对应的OCI runtime bundle启动容器\
-创新点：实现对VFS，挂载，网络和隔离api的bpf观测程序交互式地载入策略，可以允许使用者按需获取镜像加载数据
+**实现重点**：
+    通过日志还原docker解析image创建容器的过程，需要完全掌握docker解析镜像的过程，了解docker底层的实现原理，镜像解析的过程：镜像格式遵守OCI镜像规范定义，包含镜像索引，镜像清单，镜像层以及镜像配置。镜像索引用以区分镜像的不同架构平台，镜像清单中包含了镜像具体内容的哈希摘要，提供了获取镜像的寻址方式，提取镜像层信息的方法，因此主要涉及的系统调用就是openat，read，write等fs接口，docker的容器文件系统采用的是unionfs，容器最初只有一层rootfs，解析镜像层文件中的每一层都会往rootfs上覆盖新的一层，而镜像配置则主要包含了镜像中的环境变量，执行参数，存储卷等信息，docker会通过镜像配置中的内容得到对应的OCI runtime bundle启动容器\
+**创新点**：实现对VFS，挂载，网络和隔离api的bpf观测程序交互式地载入策略，可以允许使用者按需获取镜像加载数据
+涉及到的bpf hook以及相关程序（详见文档）：
+- tracepoint/syscalls/sys_enter_mount
+- tracepoint/syscalls/sys_enter_openat
+- tracepoint/syscalls/sys_enter_read
+- tracepoint/sched/sched_process_exec
+- tracepoint/sched/sched_process_exit
+- xdp程序 （bpf目录下）
+- bpftrace脚本（scripts目录下）
 ### Docker-container monitor模块
 ![img_5.png](internal/data/assets/doc/img_5.png)
 该模块聚焦于运行中的容器的实时数据分析，OCI运行时规范规定了容器的运行状态，该模块主要观测的是出于stopped和running状态的容器，对于running状态的容器可以观测到更多有关的数据，容器本身的隔离使用了namespace和cgroup等等linux 容器技术，docker 则是通过容器运行时来管理容器
-实现重点：分析容器的namespace以及cgroup信息
-创新点：实时获取同一namespace中的peer信息，以pid namespace为例，实现了实时获取容器中新增运行进程信息的展示，减少容器外信息的干扰，其他的namespace空间也类似
+**实现重点**：分析容器的namespace以及cgroup信息，分析处在隔离中的容器的进程，网络等细节
+**创新点**：实时获取同一namespace中的peer信息，以pid namespace为例，实现了实时获取容器中新增运行进程信息的展示，减少容器外信息的干扰，其他的namespace空间也类似
+
 ## 快速开始文档
 
 ### 0.系统要求
@@ -199,7 +213,11 @@ go mod tidy // 安装必要的golang 依赖库
 ```编译可执行文件 make build ```
 
 如果没有改动bpf程序，可以使用以下命令：
-`go build -ldflags "-s -w" -o beefine`
+```bash
+# 获取vmlinux.h (btf文件)
+sudo make update 
+sudo make build
+```
 ### 运行程序
 编译成功后，执行以下命令运行：
 `sudo ./beefine`
@@ -213,7 +231,6 @@ make package windows # GOOS=windows GOARCH=amd64
 ```
 
 ---
-
 ## 2. 运行二进制应用
 
 以下是直接运行已编译二进制文件的方法，适用于不需要修改源码的用户。
@@ -252,7 +269,6 @@ chmod +x beefine
 ### 2. 观测 Docker 使用资源情况
 在 GUI 中选择 `Docker`，查看当前系统中的docker资源使用情况
 ![img_1.png](internal/data/assets/doc/img_1.png)
-
 ### 3. 观测Docker 创建容器过程中行为
    a. 拉取docker image\
    b. 从系统中选择已有的docker image\
@@ -271,9 +287,7 @@ chmod +x beefine
 ![img_2.png](internal/data/assets/doc/img_2.png)
 
 ---
-
 ## 未来计划
-
 1. **Kubernetes 支持**：
     - 增加对 Kubernetes 集群中 Pod 创建过程的监控功能。
 2. **实时性能监控**：
@@ -281,8 +295,7 @@ chmod +x beefine
 3. **数据可视化**：
     - 增加更多实时图表和分析报告，提升用户体验。
 4. **跨平台支持**：
-    - 提供更多平台的支持，兼容 Windows 和 macOS。
-5. **支持ssh连接到远程主机观测容器信息**
+    - 提供更多平台的支持，兼容 Windows 和 macOS（bpf程序观测的操作系统依然是linux，但是支持选择远端的主机或者云服务器）。
 ---
 
 ## 参考项目
