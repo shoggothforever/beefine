@@ -48,10 +48,11 @@
 
 ## 项目完成情况
 
-### 已实现功能
+### 部分已实现功能
 
-1. **Docker 创建过程观测**:
+1. **Docker 观测**:
     - 使用 eBPF 追踪操作系统调用,捕获 Docker 使用镜像创建容器的全过程。
+    - Docker 容器运行中的性能观测
 2. **图形化界面**:
     - 使用 Fyne 开发可交互的 GUI,包括日志查看、动态程序加载等功能。
 3. **实时 eBPF 程序加载**:
@@ -97,6 +98,7 @@
 3 后续计划扩展到更多场景,包括
 - [ ] 对docker底层containerd,runc,docker-shim添加更细致的观测功能
 - [ ] Kubernetes 集群中的pod行为观测
+- [ ] 日志数据存盘回放功能
     
 
 ---
@@ -132,17 +134,18 @@
 ![img_1.png](internal/data/assets/doc/img_7.png)
 - 载入ebpf程序监测系统中的exec系统调用,在入口和出口处都设置了钩子函数,实时展示系统中运行和退出的程序
 ![img_2.png](internal/data/assets/doc/img_8.png)
-**实现难点及创新点**:需要理解bpf程序的载入过程,熟悉linux内核中支持的bpf钩子函数,在限制了可以获取的函数参数信息的条件下编写能够通过bpf verifier的bpfc程序,然后结合golang的bpf辅助库实现了一键载入bpf程序,并且通过bpf map、perf、ringbuffer等数据结构实现内核态和用户态的数据交互,再结合golang 的UI库搭建了可交互的桌面端程序,把底层的细节对用户隐藏,只展示用户需要的数据。支持使用脚本一键创建bpf程序模板,方便教学使用
+
+**实现难点及创新点**:需要理解bpf程序的载入过程,熟悉linux内核中支持的bpf钩子函数,在限制了可以获取的函数参数信息的条件下编写能够通过bpf verifier的bpf c程序,然后结合golang的bpf辅助库实现了一键载入bpf程序,并且通过bpf map、perf、ringbuffer等数据结构实现内核态和用户态的数据交互,再结合golang 的UI库搭建了可交互的桌面端程序,把底层的细节对用户隐藏,只展示用户需要的数据。支持使用脚本一键创建bpf程序模板,方便教学使用
 ### Docker DashBoard 
 展示系统中的docker daemon实时的使用情况,提供功能便于使用者了解docker运行的整体情况
+
 **实现重点**:获取系统中的容器和镜像数量,以及统计所有运行中的容器对系统cpu和memory资源的使用情况
 ![img_3.png](internal/data/assets/doc/img_9.png)
 
 ### Docker-image monitor模块
 ![img_4.png](internal/data/assets/doc/img_4.png)
 该模块聚焦于观测docker基于image创建容器的全过程,聚合了docker 对image的管理能力,可以输入image name 拉取image,拉取选择系统中存在的镜像,右侧的看板会展示当前镜像创建的过程日志 \
-**实现重点**:
-    通过日志还原docker解析image创建容器的过程,需要完全掌握docker解析镜像的过程,了解docker底层的实现原理,镜像解析的过程:镜像格式遵守OCI镜像规范定义,包含镜像索引,镜像清单,镜像层以及镜像配置。镜像索引用以区分镜像的不同架构平台,镜像清单中包含了镜像具体内容的哈希摘要,提供了获取镜像的寻址方式,提取镜像层信息的方法,因此主要涉及的系统调用就是openat,read,write等fs接口,docker的容器文件系统采用的是unionfs,容器最初只有一层rootfs,解析镜像层文件中的每一层都会往rootfs上覆盖新的一层,而镜像配置则主要包含了镜像中的环境变量,执行参数,存储卷等信息,docker会通过镜像配置中的内容得到对应的OCI runtime bundle启动容器\
+**实现重点**:通过日志还原docker解析image创建容器的过程,需要完全掌握docker解析镜像的过程,了解docker底层的实现原理,镜像解析的过程:镜像格式遵守OCI镜像规范定义,包含镜像索引,镜像清单,镜像层以及镜像配置。镜像索引用以区分镜像的不同架构平台,镜像清单中包含了镜像具体内容的哈希摘要,提供了获取镜像的寻址方式,提取镜像层信息的方法,因此主要涉及的系统调用就是openat,read,write等fs接口,docker的容器文件系统采用的是unionfs,容器最初只有一层rootfs,解析镜像层文件中的每一层都会往rootfs上覆盖新的一层,而镜像配置则主要包含了镜像中的环境变量,执行参数,存储卷等信息,docker会通过镜像配置中的内容得到对应的OCI runtime bundle启动容器\
 **创新点**:实现对VFS,挂载,网络和隔离api的bpf观测程序交互式地载入策略,可以允许使用者按需获取镜像加载数据
 涉及到的bpf hook以及相关程序（详见文档）:
 - tracepoint/syscalls/sys_enter_mount
@@ -150,12 +153,27 @@
 - tracepoint/syscalls/sys_enter_read
 - tracepoint/sched/sched_process_exec
 - tracepoint/sched/sched_process_exit
+- tracepoint:syscalls:sys_enter_clone
+- tracepoint:syscalls:sys_enter_unshare
+- tracepoint:syscalls:sys_enter_setns
+- tracepoint:syscalls:sys_enter_seccomp
+- tracepoint:syscalls:sys_enter_prctl
+- tracepoint:cgroup:cgroup_attach_task
+- tracepoint:syscalls:sys_enter_socket
+- tracepoint:syscalls:sys_enter_bind
+- tracepoint:syscalls:sys_enter_listen
+- tracepoint:syscalls:sys_enter_accept
+- tracepoint:syscalls:sys_enter_connect
+- tracepoint:syscalls:sys_enter_epoll_create
+- kprobe:tcp_connect
 - xdp程序 （bpf目录下）
 - bpftrace脚本（scripts目录下）
 ### Docker-container monitor模块
 ![img_5.png](internal/data/assets/doc/img_5.png)
-该模块聚焦于运行中的容器的实时数据分析,OCI运行时规范规定了容器的运行状态,该模块主要观测的是出于stopped和running状态的容器,对于running状态的容器可以观测到更多有关的数据,容器本身的隔离使用了namespace和cgroup等等linux 容器技术,docker 则是通过容器运行时来管理容器
+该模块聚焦于运行中的容器的实时数据分析,OCI运行时规范规定了容器的运行状态,该模块主要观测的是处于stopped和running状态的容器,对于running状态的容器可以观测到更多有关的数据,容器本身的隔离使用了namespace和cgroup等等linux 容器技术,docker 则是通过容器运行时来管理容器
+
 **实现重点**:分析容器的namespace以及cgroup信息,分析处在隔离中的容器的进程,网络等细节
+
 **创新点**:实时获取同一namespace中的peer信息,以pid namespace为例,实现了实时获取容器中新增运行进程信息的展示,减少容器外信息的干扰,其他的namespace空间也类似
 
 ## 快速开始文档

@@ -11,6 +11,7 @@ import (
 
 const MaxLogRow = 500
 
+// LogBoard 采用TextGrid性能不高，暂时采用entry替代
 type LogBoard struct {
 	widget.BaseWidget
 	entry       *widget.Entry
@@ -26,8 +27,8 @@ func (l *LogBoard) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(l.scroll)
 }
 func (l *LogBoard) AppendLogf(format string, args ...any) {
-	l.m.Lock()
-	defer l.m.Unlock()
+	//l.m.Lock()
+	//defer l.m.Unlock()
 	text := fmt.Sprintf(format, args...)
 	if !strings.HasSuffix(text, "\n") {
 		text += "\n"
@@ -40,14 +41,14 @@ func (l *LogBoard) AppendLogf(format string, args ...any) {
 	l.Refresh()
 }
 func (l *LogBoard) SetText(text string) {
-	l.m.Lock()
-	defer l.m.Unlock()
+	//l.m.Lock()
+	//defer l.m.Unlock()
 	l.entry.SetText(text)
 }
 func (l *LogBoard) Clear() {
-	l.m.Lock()
-	defer l.m.Unlock()
-	l.logs.SetText(l.defaultText)
+	//l.m.Lock()
+	//defer l.m.Unlock()
+	l.entry.SetText("")
 	l.Refresh()
 }
 func NewLogBoard(text string, weight, height float32) *LogBoard {

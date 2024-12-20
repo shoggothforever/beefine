@@ -27,6 +27,7 @@ const (
 
 // DockerRunConfig 定义 docker run 的 JSON 配置结构
 type DockerRunConfig struct {
+	Cmd        string   `json:"cmd"`                  // 进入容器后运行的第一个程序
 	Image      string   `json:"image"`                // 镜像名称
 	Name       string   `json:"name,omitempty"`       // 容器名称
 	Ports      []string `json:"ports,omitempty"`      // 端口映射
@@ -89,6 +90,7 @@ func GetDockerClient() (*client.Client, error) {
 /*
 参考示例配置
 `{
+	"cmd" :  "/bin/sh",
     "image": "nginx",
     "name": "my-container",
     "ports": ["80:80", "443:443"],
@@ -136,8 +138,11 @@ func ParseAndRunDockerRun(jsonConfig string, image string) (string, error) {
 
 	// 必须的参数（镜像名）
 	cmdArgs = append(cmdArgs, config.Image)
+	if len(config.Cmd) > 0 {
+		cmdArgs = append(cmdArgs, config.Cmd)
+	}
 	// 打印生成的命令（可选）
-	fmt.Println("Executing command:", "docker", strings.Join(cmdArgs, " "))
+	log.Println("Executing command:", "docker", strings.Join(cmdArgs, " "))
 	// 执行 docker run 命令
 	cmd := exec.Command("docker", cmdArgs...)
 	output, err := cmd.CombinedOutput()

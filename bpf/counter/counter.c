@@ -38,36 +38,30 @@ SEC("xdp")
 int count_and_info(struct xdp_md *ctx) {
     void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-
     // 1. 包计数
     __u32 key = 0;
     __u64 *count = bpf_map_lookup_elem(&pkt_count, &key);
     if (count) {
         __sync_fetch_and_add(count, 1);
     }
-
     // 2. 解析以太网头部
     struct ethhdr *eth = data;
     if ((void *)(eth + 1) > data_end) {
         return XDP_PASS; // 检查包大小合法性
     }
-
     // 只处理 IPv4 数据包
     if (eth->h_proto != __constant_htons(ETH_P_IP)) {
         return XDP_PASS;
     }
-
     // 3. 解析 IP 头部
     struct iphdr *ip = data + ETH_HDR_LEN;
     if ((void *)(ip + 1) > data_end) {
         return XDP_PASS;
     }
-
     struct pkt_info pkt = {};
     pkt.src_ip = ip->saddr;      // 源 IP
     pkt.dst_ip = ip->daddr;      // 目标 IP
     pkt.protocol = ip->protocol; // 协议类型
-
     // 4. 解析 TCP/UDP 头部
     if (ip->protocol == IPPROTO_TCP) {
         struct tcphdr *tcp = (void *)ip + ip->ihl * 4;
@@ -84,10 +78,8 @@ int count_and_info(struct xdp_md *ctx) {
         pkt.src_port = __constant_ntohs(udp->source);
         pkt.dst_port = __constant_ntohs(udp->dest);
     }
-
     // 5. 传递网络包信息到用户空间
     bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &pkt, sizeof(pkt));
-
     return XDP_PASS;
 }
 

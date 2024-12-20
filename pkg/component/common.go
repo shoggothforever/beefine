@@ -7,6 +7,7 @@ import (
 	"sync"
 )
 
+// TabManager,每个package中唯一,用于管理页面
 type TabManager struct {
 	TabItemsMap map[string]*container.TabItem
 	Tabs        *container.AppTabs
@@ -14,6 +15,7 @@ type TabManager struct {
 	m           sync.Mutex
 }
 
+// tabManagerMap 键对应package，值对应package的tabManager
 var tabManagerMap = make(map[string]*TabManager)
 
 func NewTabManager(pkg string, w *fyne.Window) *TabManager {
@@ -27,6 +29,7 @@ func NewTabManager(pkg string, w *fyne.Window) *TabManager {
 	}
 	return tabManagerMap[pkg]
 }
+
 func GetTabManager(pkg string) *TabManager {
 	return tabManagerMap[pkg]
 }

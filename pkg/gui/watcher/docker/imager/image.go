@@ -62,6 +62,7 @@ func NewToolBar(ImageLogs *component.LogBoard, bpfLogs *component.LogBoard) *fyn
 	jsonEditor := widget.NewMultiLineEntry()
 	jsonEditor.SetMinRowsVisible(8)
 	jsonEditor.SetPlaceHolder(`{
+	“cmd" : "/bin/sh"
     "image": "nginx",
     "name": "my-container",
     "ports": ["80:80"],

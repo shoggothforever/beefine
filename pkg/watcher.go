@@ -15,7 +15,12 @@ import (
 	"shoggothforever/beefine/pkg/gui/watcher/welcome"
 )
 
-// Watcher defines the data structure for a tutorial
+// Watcher 目录树中的结点数据结构
+/*
+ *title需要是每个层级唯一的
+ *Intro包含了页面的简单信息
+ *View是页面canvas对象的构造函数，在运行时调用
+ */
 type Watcher struct {
 	Title, Intro string
 	View         func(w fyne.Window) fyne.CanvasObject

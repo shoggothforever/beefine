@@ -173,6 +173,7 @@ func NewContainerToolBar(containerLogs *component.LogBoard, bpfLogs *component.L
 	)
 }
 
+// chooseDiskInfo 获取选中docker容器的磁盘信息
 func (w *ContainersSelect) chooseDiskInfo(b bool) {
 	if b {
 		w.m.Lock()
@@ -196,6 +197,7 @@ func (w *ContainersSelect) chooseDiskInfo(b bool) {
 	}
 }
 
+// chooseIsolationInfo 获取选中docker容器的隔离信息
 func (w *ContainersSelect) chooseIsolationInfo(b bool) {
 	if b {
 		w.m.Lock()
@@ -257,6 +259,7 @@ func (w *ContainersSelect) chooseIsolationInfo(b bool) {
 
 }
 
+// chooseNetInfo 获取选中docker容器的网络信息
 func (w *ContainersSelect) chooseNetInfo(b bool) {
 	if b {
 		w.m.Lock()
@@ -275,9 +278,10 @@ func (w *ContainersSelect) chooseNetInfo(b bool) {
 	}
 }
 
+// chooseProcess 获取选中docker容器的进程信息，加载bpf程序
 func (w *ContainersSelect) chooseProcess(b bool) {
 	if b == true {
-		fmt.Println("choose watch process")
+		w.containerLogs.AppendLogf("choose watch process")
 		w.m.Lock()
 		stat, err := cli.ContainerInspect(w.currentContainer.ID)
 		if err != nil {
@@ -312,7 +316,7 @@ func (w *ContainersSelect) chooseProcess(b bool) {
 			}
 		}()
 	} else {
-		fmt.Println("cancel watch process")
+		w.containerLogs.AppendLogf("cancel watch process")
 		if w.cancelMap["chooseProcess"] != nil {
 			w.cancelMap["chooseProcess"]()
 			w.cancelMap["chooseProcess"] = nil
@@ -320,6 +324,7 @@ func (w *ContainersSelect) chooseProcess(b bool) {
 	}
 }
 
+// chooseCpu 获取选中docker容器的cpu性能分析数据
 func (w *ContainersSelect) chooseCpu(b bool) {
 	if b {
 		w.m.Lock()
@@ -335,6 +340,8 @@ func (w *ContainersSelect) chooseCpu(b bool) {
 
 	}
 }
+
+// chooseMemory 获取选中docker容器的memory性能分析数据
 func (w *ContainersSelect) chooseMemory(b bool) {
 	if b {
 		w.m.Lock()
@@ -398,7 +405,6 @@ func (w *ContainersSelect) getNsPeersV(ctx context.Context, pid int, nsType stri
 	if err != nil {
 		log.Fatalf("Failed to get Namespace ID for PID %d and type %s: %v", pid, nsType, err)
 	}
-
 	w.containerLogs.AppendLogf("Monitoring peers in the same namespace ")
 	w.containerLogs.AppendLogf("Namespace Type: %s, Namespace ID: %s", nsType, nsID)
 	w.containerLogs.AppendLogf("PID     PPID   USER     COMMAND")

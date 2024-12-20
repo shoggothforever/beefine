@@ -66,6 +66,7 @@ func (w *ImageSelect) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(w.base)
 }
 
+// chooseMount 挂载观测文件系统相关bpf程序
 func (w *ImageSelect) chooseVFS(b bool) {
 	if b == true {
 		w.bpfLogs.AppendLogf("choose watch unionfs")
@@ -100,6 +101,7 @@ func (w *ImageSelect) chooseVFS(b bool) {
 
 }
 
+// chooseMount 挂载mount相关bpf程序
 func (w *ImageSelect) chooseMount(b bool) {
 	if b == true {
 		w.bpfLogs.AppendLogf("choose watch mount")
@@ -128,6 +130,7 @@ func (w *ImageSelect) chooseMount(b bool) {
 
 }
 
+// chooseMount 挂载网络相关bpf程序
 func (w *ImageSelect) chooseNetwork(b bool) {
 	if b == true {
 		w.bpfLogs.AppendLogf("choose watch network")
@@ -143,6 +146,7 @@ func (w *ImageSelect) chooseNetwork(b bool) {
 	}
 }
 
+// chooseIsolation 挂载隔离相关bpf程序
 func (w *ImageSelect) chooseIsolation(b bool) {
 	if b == true {
 		w.bpfLogs.AppendLogf("choose watch namespace and cgroup")
@@ -183,7 +187,7 @@ func (w *ImageSelect) OnChanged(s string) {
 	}
 }
 
-// Function to execute bpftrace script and read its output asynchronously
+// runBPFTraceScript Function to execute bpftrace script and read its output asynchronously
 func (w *ImageSelect) runBPFTraceScript(ctx context.Context, scriptPath string) {
 	// Prepare the bpftrace command with the script file as argument
 	cmd := exec.Command("bpftrace", scriptPath)

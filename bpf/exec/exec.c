@@ -83,24 +83,20 @@ int handle_exit(struct trace_event_raw_sched_process_template *ctx)
         return 0;
     struct task_struct *task = (struct task_struct *)bpf_get_current_task();
     __u32 host_ppid = BPF_CORE_READ(task,real_parent,pid);
+    /*compare with the container's pid*/
     if (!*cg_pid&&host_ppid != *cg_pid)
         return 0;
 	/* reserve sample from BPF ringbuf */
 	e = bpf_ringbuf_reserve(&rb, sizeof(struct event), 0);
 	if (!e)
 		return 0;
-
 	/* fill out the sample with data */
-	// task = (struct task_struct *)bpf_get_current_task();
-	/* if we recorded start of the process, calculate lifetime duration */
-
 	bpf_map_delete_elem(&cg_pid_map, &pid);
     e->prio=ctx->prio;
 	e->exit_event = true;
 	e->ts = bpf_ktime_get_ns();
 	e->pid = pid;
 	bpf_get_current_comm(&e->comm, sizeof(e->comm));
-
 	/* send data to user-space for post-processing */
 	bpf_ringbuf_submit(e, 0);
 

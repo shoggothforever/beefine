@@ -37,6 +37,7 @@ func Start(req *${PACKAGE_NAME^}Req) ( chan ${PACKAGE_NAME^}Res,func()) {
     // write your link code here
 
 	  out:=Action(objs, req, stopper)
+    // using closure to create only once close function
   	buildClose := func() func() {
   		once := sync.Once{}
   		return func() {
@@ -48,9 +49,7 @@ func Start(req *${PACKAGE_NAME^}Req) ( chan ${PACKAGE_NAME^}Res,func()) {
   			})
   		}
   	}
-
   return out,buildClose()
-
 }
 func Action(objs bpfObjects , req *${PACKAGE_NAME^}Req , stopper chan struct{}) chan ${PACKAGE_NAME^}Res{
   // add your link logic here
@@ -64,7 +63,6 @@ func Action(objs bpfObjects , req *${PACKAGE_NAME^}Req , stopper chan struct{}) 
       default:
         time.Sleep(1 * time.Second)
       }
-
     }
   }()
   return out
