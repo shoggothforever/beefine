@@ -34,7 +34,31 @@ Beefine 通过 eBPF 技术捕获和分析容器的系统调用行为，并借助
 待填入
 
 # 项目测试与分析
+## Load eBPF模块测试
+点击应用左侧Load eBPF选项卡进入home界面
+### ListHelpFunction功能测试
+在home界面下点击ListHelpFunction按钮进入子界面，点击下拉选择框，选择syscall:选项，可发现应用展示出了syscall下的所有bpf帮助函数，同时支持复制等操作
 
+点击Close Tab按钮返回home界面
+![test_1.png](internal/data/assets/doc/test_1.png)
+### InspectNetwork功能测试
+在home界面下点击InspectNetwork按钮进入InspectNetwork子界面，点击下拉选择框，选择想要追踪的网络，应用自动开始抓取数据报文。
+
+打开终端，输入ping www.baidu.com 命令，发现应用显示出了数据包数量和部分报文数据，同时再进行定时数据更新。
+
+点击Stop按钮，结束网络数据抓包，点击Close Tab按钮返回home界面
+![test_2.png](internal/data/assets/doc/test_2.png)
+### TraceSyscall/Exec功能测试
+在home界面下点击TraceSyscall/Exec按钮进入TraceSyscall/Exec子界面，应用自动开始抓取调用的系统调用。
+
+打开终端，输入命令ping www.baidu.com 命令和sleep 10命令，发现应用中已经有若干条系统调用被展示出来
+
+点击Stop按钮，结束系统调用抓包，点击Close Tab按钮返回home界面
+![test_3.png](internal/data/assets/doc/test_3.png)
+
+## Docker模块测试
+点击应用左侧Docker选项卡，展开Docker模块功能
+### ImageMonitoring测试
 # 项目管理与团队管理
 
 # 总结与展望
