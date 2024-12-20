@@ -63,10 +63,11 @@ Beefine 通过 eBPF 技术捕获和分析容器的系统调用行为，并借助
 点击应用左侧ImageMonitoring选项卡，进入ImageMonitoring子界面，点击SelectExistedImage下拉选项框，选择docker:dind，选择想要显示的信息，选中对应复选框，点击Run按钮，即可创建一个Docker
 返回DockerDashboard界面，发现新创建的Docker已被显示出来
 ![test_4.png](internal/data/assets/doc/test_4.png)
+![test_7.png](internal/data/assets/doc/test_7.png)
 ![test_5.png](internal/data/assets/doc/test_5.png)
 ### ContainerMonitoring功能测试
 点击应用左侧ContainerMonitoring选项卡，进入ContainerMonitoring子界面，点击下拉选择框，选中一个正在运行的容器，在终端中进入这个容器的交互式Shell，选中任意复选框，可在左侧输出框中输出可复制的容器的相关信息；选中netinfo和process复选框，在终端进入容器输入相关命令（例如ping命令），应用右侧输出框输出相关信息
-![test_6.png](internal/data/assets/doc/test_6.png)
+![test_8.png](internal/data/assets/doc/test_8.png)
 # 项目管理与团队管理
 
 # 总结与展望
