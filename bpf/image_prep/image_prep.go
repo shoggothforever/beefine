@@ -52,6 +52,7 @@ func Start(req *ImagePrepReq) (chan ImagePreRes, func()) {
 		log.Fatalf("ringbuf.NewReader: %v", err)
 	}
 	out := Action(objs, req, stopper)
+	// using closure to create only once close function
 	buildClose := func() func() {
 		once := sync.Once{}
 		return func() {
@@ -100,7 +101,6 @@ func Action(objs bpfObjects, req *ImagePrepReq, stopper chan struct{}) chan Imag
 					continue
 				}
 				out <- event
-
 			}
 
 		}

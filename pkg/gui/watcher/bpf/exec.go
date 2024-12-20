@@ -9,7 +9,7 @@ import (
 	"shoggothforever/beefine/pkg/component"
 )
 
-const ExecUIName = "trace syscall/exec"
+const ExecUIName = "Trace SyscallExec"
 
 func ExecUI() fyne.CanvasObject {
 	// 显示状态

@@ -46,6 +46,7 @@ func Start(req *MountReq) (chan MountRes, func()) {
 	}
 	req.rd = rd
 	out := Action(objs, req, stopper)
+	// using closure to create only once close function
 	buildClose := func() func() {
 		once := sync.Once{}
 		return func() {

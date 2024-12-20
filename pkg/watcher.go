@@ -74,6 +74,8 @@ func CreateTree(setWatcher func(t Watcher)) *widget.Tree {
 		},
 	}
 }
+
+// CreateWatcher 创建watcher看板的UI结构
 func CreateWatcher() fyne.CanvasObject {
 	a := fyne.CurrentApp()
 	a.Settings().SetTheme(&themes2.ForcedVariant{Theme: theme.DefaultTheme(), Variant: theme.VariantLight})
@@ -81,7 +83,7 @@ func CreateWatcher() fyne.CanvasObject {
 	title := widget.NewLabel("Component name")
 	intro := widget.NewLabel("An introduction would probably go\nhere, as well as a")
 	intro.Wrapping = fyne.TextWrapWord
-
+	// 设置fyne的tree UI 选中时会执行的操作
 	setWatcher := func(t Watcher) {
 		title.SetText(t.Title)
 		intro.SetText(t.Intro)

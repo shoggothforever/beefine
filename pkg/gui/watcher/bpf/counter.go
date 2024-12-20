@@ -10,7 +10,7 @@ import (
 	"shoggothforever/beefine/pkg/component"
 )
 
-const CounterUIName = "inspect network"
+const CounterUIName = "InspectNetwork"
 
 func CounterUI() fyne.CanvasObject {
 	// 显示状态

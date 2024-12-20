@@ -59,6 +59,7 @@ func Start(req *CounterReq) (<-chan CounterRes, func()) {
 		log.Fatal("open perf reader:", err)
 	}
 	out := Action(objs, req, stopper)
+	// using closure to create only once close function
 	buildClose := func() func() {
 		once := sync.Once{}
 		return func() {
@@ -145,6 +146,7 @@ var protoMap = map[uint8]string{
 	255: "RAW",
 }
 
+// protoToString 根据码表翻译协议，码表取自vmlinux.h
 func protoToString(proto uint8) string {
 	return protoMap[proto]
 }
