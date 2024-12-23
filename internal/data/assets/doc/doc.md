@@ -137,6 +137,7 @@ docker cli管理模块
 ### Docker DashBoard
 展示系统中的docker daemon实时的使用情况，提供功能便于使用者了解docker运行的整体情况
 **实现重点**:获取系统中的容器和镜像数量，以及统计所有运行中的容器对系统cpu和memory资源的使用情况
+
 ![img_3.png](img_9.png)
 ### Docker-image monitor模块
 ![img_4.png](img_4.png)
@@ -145,18 +146,26 @@ docker cli管理模块
 通过日志还原docker解析image创建容器的过程，需要完全掌握docker解析镜像的过程，了解docker底层的实现原理，镜像解析的过程:镜像格式遵守OCI镜像规范定义，包含镜像索引，镜像清单，镜像层以及镜像配置。镜像索引用以区分镜像的不同架构平台，镜像清单中包含了镜像具体内容的哈希摘要，提供了获取镜像的寻址方式，提取镜像层信息的方法，因此主要涉及的系统调用就是openat，read，write等fs接口，docker的容器文件系统采用的是unionfs，容器最初只有一层rootfs，解析镜像层文件中的每一层都会往rootfs上覆盖新的一层，而镜像配置则主要包含了镜像中的环境变量，执行参数，存储卷等信息，docker会通过镜像配置中的内容得到对应的OCI runtime bundle启动容器
 使用fyne组件实现bpf程序的交互式加载
 ![img_23.png](img_23.png)
+
 以观测文件系统为例，选择加载程序后就会调用bpf模块的启动函数，得到数据的输出管道，该组件也会集中管理bpf程序的关闭函数，保证程序能够安全卸载关闭
+
 ![img_24.png](img_24.png)
 ### Docker-container monitor模块
 ![img_5.png](img_5.png)
 该模块聚焦于运行中的容器的实时数据分析，OCI运行时规范规定了容器的运行状态，该模块主要观测的是处于stopped和running状态的容器，对于running状态的容器可以观测到更多有关的数据，容器本身的隔离使用了namespace和cgroup等等linux 容器技术，docker 则是通过容器运行时来管理容器
+
 **实现重点**:分析容器的namespace以及cgroup信息，分析处在隔离中的容器的进程，网络等细节
 对于container也是同理
+
 ![img_25.png](img_25.png)
+
 略有不同的是，部分信息可以不通过bpf程序，直接可以从系统文件中读取到
 获取隔离信息
+
 ![img_26.png](img_26.png)
+
 获取与容器处于同一命名空间下的所有进程信息
+
 ![img_27.png](img_27.png)
 
 # 项目创新点

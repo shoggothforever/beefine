@@ -7,6 +7,9 @@
 成员:蔡龙祥（队长）、谭文轩（队员）、李睿涵（队员）
 指导老师:刘真、周旭
 
+操作系统大赛演示视频-T202410336994295
+
+链接: https://pan.baidu.com/s/1QFDnX9iTXRGy9-k_lGM2Ig?pwd=CZXT 提取码: CZXT
 ## 项目简介
 **Beefine** 是一个基于 **Fyne** 和 **Cilium eBPF** 框架开发的工具,旨在通过图形化交互界面（GUI）实时观测 Docker 容器的创建过程,深入理解虚拟化技术的核心理念和实现原理。本项目同时支持加载和管理 eBPF 程序,帮助用户追踪操作系统在 Docker 操作中的行为,后续将扩展到 Kubernetes 集群的 Pod 监控。
 
@@ -138,6 +141,7 @@
 └── README.md                # 项目文档 ` <br>
 ---
 ## 模块说明
+![module](internal/data/assets/doc/img_28.png)
 ### Load eBPF 模块
 ![img.png](internal/data/assets/doc/img_6.png)    
 提供了几个基础的bpf程序,可以供使用者载入,了解ebpf程序的运行效果
