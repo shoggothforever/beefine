@@ -1,14 +1,13 @@
 # beefine: Visualizing Docker Internals with eBPF
-## 2024年全国大学生计算机系统能力大赛-操作系统赛（华东区域赛）-OS应用开发赛
+## 2024年全国大学生计算机系统能力大赛-操作系统赛（华东区域赛）-OS应用开发赛道-OS系统工具开发方向
 ### 比赛相关信息
 学校:杭州电子科技大学\
 队伍编号:T202410336994295 \
-队名:霓虹Ultra队
-成员:蔡龙祥（队长）、谭文轩（队员）、李睿涵（队员）
-指导老师:刘真、周旭
-
-操作系统大赛演示视频-T202410336994295
-
+队名:霓虹Ultra队\
+成员:蔡龙祥（队长）、谭文轩（队员）、李睿涵（队员）\
+指导老师:刘真、周旭 \
+具体方向:OS系统工具开发\
+操作系统大赛演示视频-T202410336994295\
 链接: https://pan.baidu.com/s/1QFDnX9iTXRGy9-k_lGM2Ig?pwd=CZXT 提取码: CZXT
 ## 项目简介
 **Beefine** 是一个基于 **Fyne** 和 **Cilium eBPF** 框架开发的工具,旨在通过图形化交互界面（GUI）实时观测 Docker 容器的创建过程,深入理解虚拟化技术的核心理念和实现原理。本项目同时支持加载和管理 eBPF 程序,帮助用户追踪操作系统在 Docker 操作中的行为,后续将扩展到 Kubernetes 集群的 Pod 监控。
@@ -151,7 +150,6 @@
 ![img_1.png](internal/data/assets/doc/img_7.png)
 - 载入ebpf程序监测系统中的exec系统调用,在入口和出口处都设置了钩子函数,实时展示系统中运行和退出的程序
 ![img_2.png](internal/data/assets/doc/img_8.png)
-**实现难点及创新点**:需要理解bpf程序的载入过程,熟悉linux内核中支持的bpf钩子函数,在限制了可以获取的函数参数信息的条件下编写能够通过bpf verifier的bpfc程序,然后结合golang的bpf辅助库实现了一键载入bpf程序,并且通过bpf map、perf、ringbuffer等数据结构实现内核态和用户态的数据交互,再结合golang 的UI库搭建了可交互的桌面端程序,把底层的细节对用户隐藏,只展示用户需要的数据。支持使用脚本一键创建bpf程序模板,方便教学使用
 
 **实现难点及创新点**:需要理解bpf程序的载入过程,熟悉linux内核中支持的bpf钩子函数,在限制了可以获取的函数参数信息的条件下编写能够通过bpf verifier的bpf c程序,然后结合golang的bpf辅助库实现了一键载入bpf程序,并且通过bpf map、perf、ringbuffer等数据结构实现内核态和用户态的数据交互,再结合golang 的UI库搭建了可交互的桌面端程序,把底层的细节对用户隐藏,只展示用户需要的数据。支持使用脚本一键创建bpf程序模板,方便教学使用
 ### Docker DashBoard 
