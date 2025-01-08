@@ -20,7 +20,7 @@ func Screen(w fyne.Window) fyne.CanvasObject {
 	// 动态bpf日志区域
 	bpfLogs := component.NewLogBoard("Real-Time BpfLogs", 600, 200)
 	// image 日志
-	containerLogs := component.NewLogBoard("Container-Creating Logs", 600, 200)
+	containerLogs := component.NewLogBoard("Container-Runtime Logs", 600, 200)
 	toolbar := NewContainerToolBar(containerLogs, bpfLogs)
 	content := container.NewHBox(
 		toolbar,

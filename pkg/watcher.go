@@ -28,16 +28,17 @@ type Watcher struct {
 
 // Watchers 应用程序UI目录树中的结点信息
 var Watchers = map[string]Watcher{
-	"welcome":   {"welcome", "Welcome to the beefine observer", welcome.Screen},
-	"BPF":       {"Load eBPF", "Observe system-level activities", bpf.Screen},
-	"Docker":    {"Docker", "Monitor Docker activities", docker.Screen},
-	"imager":    {"Image Monitoring", "Monitor Docker imager creation process", imager.Screen},
-	"container": {"Container Monitoring", "Monitor running container performance", container2.Screen},
+	"welcome":    {"welcome", "Welcome to the beefine observer", welcome.Screen},
+	"BPF":        {"Load eBPF", "Observe system-level activities", bpf.Screen},
+	"Docker":     {"Docker", "Monitor Docker activities", docker.Screen},
+	"imager":     {"Image Monitoring", "Monitor Docker imager creation process", imager.Screen},
+	"container":  {"Container Monitoring", "Monitor running container performance", container2.Screen},
+	"Kubernetes": {"Kubernetes", "Monitor Kubernetes activities", docker.Screen},
 }
 
 // WatcherIndex 目录树UI中各个节点的连接关系
 var WatcherIndex = map[string][]string{
-	"":       {"welcome", "BPF", "Docker"},
+	"":       {"welcome", "BPF", "Docker", "Kubernetes"},
 	"Docker": {"imager", "container"},
 }
 

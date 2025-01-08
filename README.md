@@ -298,7 +298,7 @@ make package windows # GOOS=windows GOARCH=amd64
 以 Ubuntu 20.04 为例:
 
 ``` bash
-wget https://github.com/shoggothforever/beefine/releases/download/v1.0.0/beefine-linux-amd64 -O beefine
+wget https://github.com/shoggothforever/beefine/releases/download/release/beefine -O beefine
 chmod +x beefine
 ```
 ### 安装依赖
@@ -307,7 +307,7 @@ chmod +x beefine
 
 1. **Docker**: 安装命令参考上述 **编译源码** 部分。
 2. **X11图形库** 安装命令参考上述 **编译源码** 部分。
-2. **权限设置**: 确保当前用户拥有运行 eBPF 程序的权限。
+3. **权限设置**: 确保当前用户拥有运行 eBPF 程序的权限。
 
 ### 运行程序
 
@@ -345,7 +345,7 @@ chmod +x beefine
 ---
 ## 未来计划
 1. **Kubernetes 支持**:
-    - 增加对 Kubernetes 集群中 Pod 创建过程的监控功能。
+    - 目前观测k8s的bpf应用还没有太多产品，存在许多可以创新的地方，后续的一个初步的方向是增加对 Kubernetes 集群中 Pod 的自定义监控功能，以期减少k8s使用者排查问题的难度。
 2. **实时性能监控**:
     - 使用 eBPF 追踪资源使用（CPU、内存、网络流量等）,分析容器性能。
 3. **数据可视化**:

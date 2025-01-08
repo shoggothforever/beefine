@@ -20,7 +20,6 @@ func ListHelperFunc() map[string][]string {
 
 	// 解析输出
 	helperMap := extractHelpers(string(output))
-
 	return helperMap
 }
 
@@ -29,7 +28,6 @@ func extractHelpers(output string) map[string][]string {
 	helperMap := make(map[string][]string)
 	var currentProgType string
 	scanner := bufio.NewScanner(strings.NewReader(output))
-
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 
@@ -52,10 +50,8 @@ func extractHelpers(output string) map[string][]string {
 			helperMap[currentProgType] = append(helperMap[currentProgType], helper)
 		}
 	}
-
 	if err := scanner.Err(); err != nil {
 		fmt.Printf("Error reading bpftool output: %v\n", err)
 	}
-
 	return helperMap
 }
