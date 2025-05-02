@@ -15,10 +15,13 @@ type UITab struct {
 	uiFunc func() fyne.CanvasObject
 }
 
+// 管理loadBPF界面的子窗口数量
 var tabUIButtonFuncGroup = []UITab{
 	{HelpersUIName, HelpersUI},
 	{CounterUIName, CounterUI},
 	{ExecUIName, ExecUI},
+	{MountUIName, MountUI},
+	{OpenAtUIName, OpenAtUI},
 }
 
 // Screen

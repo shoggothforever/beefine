@@ -308,10 +308,10 @@ func (w *ContainersSelect) chooseProcess(b bool) {
 			for e := range out {
 				comm := helper.Bytes2String(e.Comm[:])
 				if e.ExitEvent {
-					w.bpfLogs.AppendLogf("exit duration_ns:%v,prio:%d, pid: %d,comm: %s\n", e.Ts-mp[comm], e.Prio, e.Pid, comm)
+					w.bpfLogs.AppendLogf("exit duration_ns:%v,prio:%d, pid: %d,ppid: %d,comm: %s\n", e.Ts-mp[comm], e.Prio, e.Pid, e.Ppid, comm)
 				} else {
 					mp[comm] = e.Ts
-					w.bpfLogs.AppendLogf("exec pid: %d, comm: %s\n", e.Pid, comm)
+					w.bpfLogs.AppendLogf("exec time:%v prio: %d pid: %d ppid: %d comm: %s\n", e.Ts, e.Prio, e.Pid, e.Ppid, comm)
 				}
 			}
 		}()

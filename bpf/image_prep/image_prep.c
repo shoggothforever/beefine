@@ -7,10 +7,11 @@
 char LICENSE[] SEC("license") = "Dual BSD/GPL";
 struct event {
     __u32 pid;
+    __u32 ppid;
     __u64 bytes; // 记录文件读写字节数
     char comm[16];
-    char operation[32];
-    char filename[256];
+    char operation[7];
+    char filename[64];
 };
 struct event *unused __attribute__((unused));
 
@@ -31,12 +32,15 @@ int trace_openat(struct trace_event_raw_sys_enter *ctx) {
     struct event *e;
     const char *filename = (const char *)ctx->args[1];
     __u32 pid = bpf_get_current_pid_tgid() >> 32;
+    struct task_struct *task = (struct task_struct *)bpf_get_current_task();
+    __u32 ppid = BPF_CORE_READ(task, real_parent, tgid);
     e = bpf_ringbuf_reserve(&es, sizeof(*e), 0);
     if (!e) return 0;
     bpf_get_current_comm(&e->comm, sizeof(e->comm));
     bpf_probe_read_str(&e->filename, sizeof(e->filename), filename);
     bpf_probe_read_str(&e->operation, sizeof(e->operation), "openat");
     e->pid = pid;
+    e->ppid=ppid;
     e->bytes = 0; // 初始为 0
     bpf_ringbuf_submit(e, 0);
     return 0;
@@ -50,12 +54,10 @@ int trace_read(struct trace_event_raw_sys_enter *ctx) {
     struct event *e;
     e = bpf_ringbuf_reserve(&es, sizeof(*e), 0);
     if (!e) return 0;
-
     bpf_get_current_comm(&e->comm, sizeof(e->comm));
     bpf_probe_read_str(&e->operation, sizeof(e->operation), "read");
     e->pid = pid;
     e->bytes = bytes;
-
     bpf_ringbuf_submit(e, 0);
     return 0;
 }

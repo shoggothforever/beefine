@@ -95,15 +95,13 @@ func Action(objs bpfObjects, req *CounterReq, stopper chan struct{}) chan Counte
 				}
 				err = objs.PktCount.Lookup(uint32(0), &count)
 				if err != nil {
-					fmt.Println("Map lookup:", err)
+					log.Fatalf("Error looking up packet count: %v", err)
 				}
 				var info bpfPktInfo
 				if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &info); err != nil {
 					fmt.Printf("Failed to parse packet info: %v\n", err)
 					continue
 				}
-				fmt.Printf("Src IP: %s, Dst IP: %s, Src Port: %d, Dst Port: %d, Protocol: %s\n",
-					ipToString(info.SrcIp), ipToString(info.DstIp), info.SrcPort, info.DstPort, protoToString(info.Protocol))
 				res.build(&info, count)
 				out <- res
 			case <-stopper:

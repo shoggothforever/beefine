@@ -44,7 +44,7 @@ func Screen(_ fyne.Window) fyne.CanvasObject {
 	)
 	author := fyne.StaticResource{}
 	author.StaticName = "author"
-	author.StaticContent = []byte("蔡龙祥 <1337231450@qq.com>\n谭文轩 <2@qq.com>\n李睿涵 <3@qq.com>\n\n")
+	author.StaticContent = []byte("蔡龙祥 <1337231450@qq.com>\n\n")
 	authors := widget.NewRichTextFromMarkdown(formatAuthors(string(author.Content())))
 	content := container.NewVBox(
 		widget.NewLabelWithStyle("\n\nWelcome to the beefine app", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),

@@ -26,6 +26,7 @@ struct {
 
 struct event {
 	int32 pid;
+	int32 ppid;
 	int32 prio;
 	__u64 ts;
 	char comm[TASK_COMM_LEN];
@@ -39,11 +40,14 @@ int handle_exec(struct trace_event_raw_sched_process_exec *ctx)
 	unsigned fname_off;
 	struct event *e;
 	int pid;
+	int ppid;
 	int *cg_pid;
 	__u64 ts;
 
 	/* remember time exec() was executed for this PID */
 	pid = bpf_get_current_pid_tgid() >> 32;
+    struct task_struct *task = (struct task_struct *)bpf_get_current_task();
+	ppid =BPF_CORE_READ(task, real_parent, tgid);
     /* don't emit exec events when minimum duration is specified */
     cg_pid=bpf_map_lookup_elem(&cg_pid_map,&container_map_key);
     if (!cg_pid)
@@ -54,6 +58,7 @@ int handle_exec(struct trace_event_raw_sched_process_exec *ctx)
 		return 0;
 	e->exit_event = false;
 	e->pid = pid;
+	e->ppid= ppid;
 	ts = bpf_ktime_get_ns();
 	e->ts=ts;
 	bpf_get_current_comm(&e->comm, sizeof(e->comm));

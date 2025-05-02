@@ -12,6 +12,8 @@ import (
 	"shoggothforever/beefine/pkg/gui/watcher/docker"
 	container2 "shoggothforever/beefine/pkg/gui/watcher/docker/container"
 	"shoggothforever/beefine/pkg/gui/watcher/docker/imager"
+	"shoggothforever/beefine/pkg/gui/watcher/kubernetes"
+	"shoggothforever/beefine/pkg/gui/watcher/kubernetes/pod"
 	"shoggothforever/beefine/pkg/gui/watcher/welcome"
 )
 
@@ -31,15 +33,17 @@ var Watchers = map[string]Watcher{
 	"welcome":    {"welcome", "Welcome to the beefine observer", welcome.Screen},
 	"BPF":        {"Load eBPF", "Observe system-level activities", bpf.Screen},
 	"Docker":     {"Docker", "Monitor Docker activities", docker.Screen},
-	"imager":     {"Image Monitoring", "Monitor Docker imager creation process", imager.Screen},
-	"container":  {"Container Monitoring", "Monitor running container performance", container2.Screen},
-	"Kubernetes": {"Kubernetes", "Monitor Kubernetes activities", docker.Screen},
+	"imager":     {"Image Monitor", "Monitor Docker imager creation process", imager.Screen},
+	"container":  {"Container Monitor", "Monitor running container performance", container2.Screen},
+	"Kubernetes": {"Kubernetes", "Monitor Kubernetes activities", kubernetes.Screen},
+	"pod":        {"Pod Monitor", "Monitor Kubernetes Pod communication", pod.Screen},
 }
 
 // WatcherIndex 目录树UI中各个节点的连接关系
 var WatcherIndex = map[string][]string{
-	"":       {"welcome", "BPF", "Docker", "Kubernetes"},
-	"Docker": {"imager", "container"},
+	"":           {"welcome", "BPF", "Docker", "Kubernetes"},
+	"Docker":     {"imager", "container"},
+	"Kubernetes": {"pod"},
 }
 
 // viewsSet 保存创建过的canvas信息，避免重复创建

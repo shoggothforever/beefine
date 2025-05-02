@@ -18,9 +18,9 @@ var tabUIButtonFuncMap = map[string]func() fyne.CanvasObject{}
 // Screen
 func Screen(w fyne.Window) fyne.CanvasObject {
 	// 动态bpf日志区域
-	bpfLogs := component.NewLogBoard("Real-Time BpfLogs", 600, 200)
+	bpfLogs := component.NewLogBoard(PKGName+"BPF", "Real-Time BpfLogs", 600, 500)
 	// image 日志
-	containerLogs := component.NewLogBoard("Container-Runtime Logs", 600, 200)
+	containerLogs := component.NewLogBoard(PKGName+"runtime", "Container-Runtime Logs", 600, 500)
 	toolbar := NewContainerToolBar(containerLogs, bpfLogs)
 	content := container.NewHBox(
 		toolbar,

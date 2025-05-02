@@ -200,10 +200,6 @@
 - bpftrace脚本（scripts目录下）
 ### Docker-container monitor模块
 ![img_5.png](internal/data/assets/doc/img_5.png)
-该模块聚焦于运行中的容器的实时数据分析,OCI运行时规范规定了容器的运行状态,该模块主要观测的是出于stopped和running状态的容器,对于running状态的容器可以观测到更多有关的数据,容器本身的隔离使用了namespace和cgroup等等linux 容器技术,docker 则是通过容器运行时来管理容器
-**实现重点**:分析容器的namespace以及cgroup信息,分析处在隔离中的容器的进程,网络等细节
-**创新点**:实时获取同一namespace中的peer信息,以pid namespace为例,实现了实时获取容器中新增运行进程信息的展示,减少容器外信息的干扰,其他的namespace空间也类似
-
 该模块聚焦于运行中的容器的实时数据分析,OCI运行时规范规定了容器的运行状态,该模块主要观测的是处于stopped和running状态的容器,对于running状态的容器可以观测到更多有关的数据,容器本身的隔离使用了namespace和cgroup等等linux 容器技术,docker 则是通过容器运行时来管理容器
 
 **实现重点**:分析容器的namespace以及cgroup信息,分析处在隔离中的容器的进程,网络等细节

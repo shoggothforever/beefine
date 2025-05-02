@@ -16,7 +16,7 @@ func HelpersUI() fyne.CanvasObject {
 	progTypeToHooks := logic.ListHelperFunc()
 	// 下拉菜单：progtype
 	progTypeSelect := widget.NewSelect([]string{}, nil)
-	progTypeSelect.PlaceHolder = "Select ProgType"
+	progTypeSelect.PlaceHolder = "Select eBPF Program Type"
 
 	// 初始化 ProgType 选项
 	for progType := range progTypeToHooks {
@@ -24,7 +24,7 @@ func HelpersUI() fyne.CanvasObject {
 	}
 	progTypeSelect.Refresh()
 	// 可用hook看板
-	log := component.NewLogBoard("eBPF helpers supported for program type", 200, 400)
+	log := component.NewLogBoard("ListHelpFunction", "eBPF helpers supported for program type", 200, 400)
 	// 监听 ProgType 的选择事件
 	progTypeSelect.OnChanged = func(progType string) {
 		// 更新 hookSelect 的内容

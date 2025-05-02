@@ -22,10 +22,9 @@ const (
 // Screen
 func Screen(w fyne.Window) fyne.CanvasObject {
 	// 动态bpf日志区域
-	bpfLogs := component.NewLogBoard("Real-Time BpfLogs", 600, 200)
+	bpfLogs := component.NewLogBoard(PKGName+"BPF", "Real-Time BpfLogs", 600, 500)
 	// image 日志
-	ImageLogs := component.NewLogBoard("Container-Creating Logs", 600, 200)
-
+	ImageLogs := component.NewLogBoard(PKGName+"runtime", "Container-Creating Logs", 600, 500)
 	//var bpfChoices
 	toolbar := NewToolBar(ImageLogs, bpfLogs)
 	// 模拟实时更新日志和图表数据
@@ -100,7 +99,7 @@ func NewToolBar(ImageLogs *component.LogBoard, bpfLogs *component.LogBoard) *fyn
 		imageSelector,
 		widget.NewSeparator(),
 		widget.NewCheck("VFS", imageSelector.chooseVFS),
-		widget.NewCheck("mount", imageSelector.chooseMount),
+		widget.NewCheck("mount/unshare/clone", imageSelector.chooseMount),
 		widget.NewCheck("network", imageSelector.chooseNetwork),
 		widget.NewCheck("isolation", imageSelector.chooseIsolation),
 		jsonEditor,

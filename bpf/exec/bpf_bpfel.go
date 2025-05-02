@@ -14,7 +14,9 @@ import (
 
 type bpfEvent struct {
 	Pid       uint32
+	Ppid      uint32
 	Prio      uint32
+	_         [4]byte
 	Ts        uint64
 	Comm      [16]int8
 	ExitEvent bool

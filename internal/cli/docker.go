@@ -116,6 +116,11 @@ func ParseAndRunDockerRun(jsonConfig string, image string) (string, error) {
 		config.Image = image
 	}
 	// 可选参数
+	for _, volume := range config.Volumes {
+		cmdArgs = append(cmdArgs, "-v", volume)
+	}
+	cmdArgs = append(cmdArgs, "-itd")
+
 	if config.Name != "" {
 		cmdArgs = append(cmdArgs, "--name", config.Name)
 	}
@@ -128,13 +133,10 @@ func ParseAndRunDockerRun(jsonConfig string, image string) (string, error) {
 	for _, port := range config.Ports {
 		cmdArgs = append(cmdArgs, "-p", port)
 	}
-	for _, volume := range config.Volumes {
-		cmdArgs = append(cmdArgs, "-v", volume)
-	}
+
 	for _, env := range config.Env {
 		cmdArgs = append(cmdArgs, "-e", env)
 	}
-	cmdArgs = append(cmdArgs, "-d")
 
 	// 必须的参数（镜像名）
 	cmdArgs = append(cmdArgs, config.Image)

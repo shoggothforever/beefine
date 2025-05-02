@@ -20,11 +20,11 @@ type ImagePrepReq struct {
 }
 type ImagePreRes struct {
 	Pid       uint32
-	_         [4]byte
+	Ppid      uint32
 	Bytes     uint64
 	Comm      [16]byte
-	Operation [32]byte
-	Filename  [256]byte
+	Operation [7]byte
+	Filename  [64]byte
 }
 
 func Start(req *ImagePrepReq) (chan ImagePreRes, func()) {
@@ -69,7 +69,6 @@ func Start(req *ImagePrepReq) (chan ImagePreRes, func()) {
 		}
 	}
 	return out, buildClose()
-
 }
 func Action(objs bpfObjects, req *ImagePrepReq, stopper chan struct{}) chan ImagePreRes {
 	// add your link logic here

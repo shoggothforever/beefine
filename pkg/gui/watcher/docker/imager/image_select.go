@@ -14,8 +14,8 @@ import (
 	"shoggothforever/beefine/internal/cli"
 	"shoggothforever/beefine/internal/helper"
 	"shoggothforever/beefine/pkg/component"
+	"strings"
 	"sync"
-	"time"
 )
 
 // MyCustomWidget 是自定义控件，包装了 Select 并添加了额外的字段
@@ -66,29 +66,31 @@ func (w *ImageSelect) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(w.base)
 }
 
-// chooseMount 挂载观测文件系统相关bpf程序
+// chooseVFS 挂载观测文件系统相关bpf程序
 func (w *ImageSelect) chooseVFS(b bool) {
 	if b == true {
 		w.bpfLogs.AppendLogf("choose watch unionfs")
 		req := image_prep.ImagePrepReq{}
 		out, cancel := image_prep.Start(&req)
-
 		w.cancelMap["chooseVFS"] = cancel
 		go func() {
 			mp := make(map[string]int)
-			st := time.Now()
 			for event := range out {
 				comm := helper.Bytes2String(event.Comm[:])
-				str := fmt.Sprintf("pid:%d,comm:%s,operation:%s", event.Pid, comm, helper.Bytes2String(event.Operation[:]))
-				if _, ok := mp[str]; ok {
-					mp[str]++
-					continue
+				filename := helper.Bytes2String(event.Filename[:])
+				if strings.HasPrefix(filename, "/var/lib/docker") ||
+					strings.HasPrefix(filename, "/etc/docker") || strings.HasPrefix(filename, "/var/lib/containerd") ||
+					strings.HasPrefix(filename, "/var/lib/cri-o") ||
+					strings.HasPrefix(filename, "/var/log/docker") {
+					str := fmt.Sprintf("ppid:%d comm:%s,operation:%s,filename:%s", event.Ppid, comm, helper.Bytes2String(event.Operation[:]), filename)
+					if _, ok := mp[str]; ok {
+						mp[str]++
+						continue
+					}
+					mp[str] = 1
+					w.bpfLogs.AppendLogf(str)
 				}
-				mp[str] = 1
-				w.bpfLogs.AppendLogf(str)
-			}
-			for log, count := range mp {
-				w.bpfLogs.AppendLogf("%s count:%d during %f s\n ", log, count, time.Since(st).Seconds())
+
 			}
 		}()
 	} else {
@@ -96,9 +98,7 @@ func (w *ImageSelect) chooseVFS(b bool) {
 		if w.cancelMap["chooseVFS"] != nil {
 			w.cancelMap["chooseVFS"]()
 		}
-
 	}
-
 }
 
 // chooseMount 挂载mount相关bpf程序
@@ -208,7 +208,7 @@ func (w *ImageSelect) runBPFTraceScript(ctx context.Context, scriptPath string) 
 	// Start a goroutine to process the output asynchronously
 	scanner := bufio.NewScanner(stdout)
 	mp := make(map[string]int)
-	t := time.Now()
+	//t := time.Now()
 	for {
 		select {
 		case <-done:
@@ -217,9 +217,9 @@ func (w *ImageSelect) runBPFTraceScript(ctx context.Context, scriptPath string) 
 			if err := cmd.Process.Kill(); err != nil {
 				fmt.Printf("failed to kill process: %v", err)
 			}
-			for text, cnt := range mp {
-				w.bpfLogs.AppendLogf("%s catch count %d during %d ms \n", text, cnt, time.Now().Sub(t)/1000/1000)
-			}
+			//for text, cnt := range mp {
+			//	w.bpfLogs.AppendLogf("%s catch count %d during %d ms \n", text, cnt, time.Now().Sub(t)/1000/1000)
+			//}
 			return
 		default:
 			scanner.Scan()

@@ -9,7 +9,7 @@ import (
 	"shoggothforever/beefine/pkg/component"
 )
 
-const ExecUIName = "Trace SyscallExec"
+const ExecUIName = "TraceSyscallExec"
 
 func ExecUI() fyne.CanvasObject {
 	// 显示状态
@@ -28,7 +28,7 @@ func ExecUI() fyne.CanvasObject {
 			stopButton.Disable()
 		}
 	}
-	log := component.NewLogBoard(" ", 200, 400)
+	log := component.NewLogBoard(ExecUIName, " ", 200, 400)
 	go func() {
 		mp := make(map[string]uint64)
 		for e := range out {

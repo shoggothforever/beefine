@@ -28,7 +28,7 @@ func CounterUI() fyne.CanvasObject {
 	for _, iface := range interfaces {
 		options = append(options, iface.Name)
 	}
-	log := component.NewLogBoard("catch network info through xdp", 200, 400)
+	log := component.NewLogBoard("InspectNetwork", "catch network info through xdp", 200, 400)
 	// 创建 Select 控件
 	selectIface := widget.NewSelect(options, nil)
 	selectIface.PlaceHolder = "Select a network interface"

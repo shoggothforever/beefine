@@ -36,7 +36,7 @@ func extractHelpers(output string) map[string][]string {
 			// 提取程序类型
 			parts := strings.Split(line, " ")
 			if len(parts) > 6 {
-				currentProgType = parts[len(parts)-1]
+				currentProgType = strings.TrimRight(parts[len(parts)-1], ":")
 			} else {
 				currentProgType = "unknown"
 			}

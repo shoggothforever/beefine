@@ -23,7 +23,9 @@ type ExecReq struct {
 }
 type ExecRes struct {
 	Pid       uint32
+	Ppid      uint32
 	Prio      uint32
+	_         [4]byte
 	Ts        uint64
 	Comm      [16]byte
 	ExitEvent bool
@@ -83,7 +85,7 @@ func Action(objs bpfObjects, req *ExecReq, stopper chan struct{}) chan ExecRes {
 			log.Printf("unable to set cgmap, cg_pid:%d\n ,%s", req.ContainerPid, err.Error())
 			return
 		}
-		log.Printf("container's pid: %d\n", req.ContainerPid)
+		//log.Printf("container's pid: %d\n", req.ContainerPid)
 		for {
 			select {
 			case <-stopper:
@@ -102,6 +104,7 @@ func Action(objs bpfObjects, req *ExecReq, stopper chan struct{}) chan ExecRes {
 				}
 				e.ExitEvent = event.ExitEvent
 				e.Pid = event.Pid
+				e.Ppid = event.Ppid
 				e.Ts = event.Ts
 				e.Prio = event.Prio
 				for k, v := range event.Comm {
